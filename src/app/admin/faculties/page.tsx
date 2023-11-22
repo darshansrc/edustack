@@ -9,6 +9,7 @@ import {
   Select,
   message,
   Popconfirm,
+  Skeleton,
 } from "antd";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { db } from "@/lib/firebase-config";
@@ -39,6 +40,7 @@ const ManageFaculties = () => {
     null
   );
   const [form] = Form.useForm();
+  const [dataFetched, setDataFetched] = useState(false);
 
   const showModal = (faculty?: FacultyData) => {
     setEditingFaculty(faculty || null);
@@ -97,6 +99,7 @@ const ManageFaculties = () => {
   useEffect(() => {
     const fetchFaculty = async () => {
       try {
+        setDataFetched(false);
         const facultySnapshot = await getDocs(collection(db, "faculty"));
         const fetchedFacultyData: FacultyData[] = facultySnapshot.docs.map(
           (doc) => ({
@@ -108,9 +111,9 @@ const ManageFaculties = () => {
           })
         );
         setFacultyData(fetchedFacultyData);
-        console.log(fetchedFacultyData);
+        setDataFetched(true);
       } catch (error) {
-        console.error("Error fetching faculty:", error);
+        messageApi.error("Error fetching faculty!");
       }
     };
 
@@ -181,13 +184,17 @@ const ManageFaculties = () => {
           Add New Faculty
         </Button>
       </div>
-      <div className="max-w-11/12 border rounded-lg overflow-x-auto overflow-y-auto">
-        <Table
-          columns={columns}
-          dataSource={facultyData}
-          size="small"
-          className="w-[calc(100%)] max-w-[calc(100%-200px)]"
-        />
+      <div className="border rounded-lg overflow-x-auto overflow-y-auto">
+        {dataFetched ? (
+          <Table
+            columns={columns}
+            dataSource={facultyData}
+            size="small"
+            className="w-full min-w-full max-w-[calc(100%-200px)]"
+          />
+        ) : (
+          <Skeleton active className="w-full p-10 max-w-[calc(100%-200px)]" />
+        )}
       </div>
 
       <Modal
