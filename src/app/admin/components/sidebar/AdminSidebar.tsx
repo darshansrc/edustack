@@ -54,11 +54,11 @@ const AdminSidebar = () => {
     <div
       className={
         collapsed
-          ? "hidden md:block md:h-screen md:w-[80px] md:min-w-[80px] transition-all "
-          : "hidden md:block md:h-screen md:w-[200px] md:min-w-[200px] transition-all "
+          ? "  h-screen md:w-[80px] min-w-[80px] transition-all "
+          : "  h-screen md:w-[200px] min-w-[200px] transition-all "
       }
     >
-      <Layout className="hidden h-screen min-h-screen md:block fixed left-0 z-[50] top-0">
+      <Layout className=" h-screen min-h-screen  fixed left-0 z-[50] top-0">
         <Sider
           collapsible
           collapsed={collapsed}
