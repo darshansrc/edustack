@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BsStack } from "react-icons/bs";
 import { Alert, Button, Input } from "antd";
 import { HiOutlineMail, HiOutlineLockClosed } from "react-icons/hi";
@@ -16,6 +16,10 @@ const AdminAuthPage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const router = useRouter();
+
+  useEffect(() => {
+    setError("");
+  }, [enteredEmail, enteredPassword]);
 
   const handleLogin = async () => {
     if (!enteredEmail || !enteredPassword) {
@@ -100,8 +104,10 @@ const AdminAuthPage = () => {
 
           <Button
             type="primary"
-            className="w-full mb-8 mt-1 h-12 p-12 rounded-xl"
             onClick={handleLogin}
+            block
+            loading={isLoading}
+            className="mb-3"
           >
             {isLoading ? "Loading..." : "Login"}
           </Button>
