@@ -9,18 +9,3 @@ body {
 .ant-btn-primary {
   background-color: #0577fb; /* Use primary color */
 }
-
-[class^="ant-"],
-td {
-  transition: none !important;
-}
-
-[class^="ant-menu"] {
-  transition: border-color 0.3s cubic-bezier(0.645, 0.045, 0.355, 1),
-    background 0.3s cubic-bezier(0.645, 0.045, 0.355, 1) !important;
-
-  .anticon,
-  .anticon + span {
-    transition: none !important;
-  }
-}

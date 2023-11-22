@@ -21,7 +21,7 @@ const AdminAuthPage = () => {
   return (
     <>
       <div className="min-w-screen min-h-screen flex flex-col items-center justify-center">
-        <div className="w-11/12 max-w-md flex flex-col items-center justify-center text-center bg-white rounded-xl border border-solid border-gray-100">
+        <div className="w-11/12 max-w-md flex flex-col items-center justify-center text-center bg-white rounded-xl border border-solid border-gray-100 p-4">
           <h4 className="font-poppins flex flex-row  my-4 font-semibold  text-[22px] text-gray-700 mt-3">
             <BsStack className="w-8 h-8 text-primary pr-2" /> Edustack
           </h4>
@@ -56,7 +56,7 @@ const AdminAuthPage = () => {
               <Input.Password />
             </Form.Item>
 
-            <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+            <Form.Item>
               <Button type="primary" htmlType="submit">
                 Submit
               </Button>
