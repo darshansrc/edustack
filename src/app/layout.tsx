@@ -29,6 +29,15 @@ export default function RootLayout({
     `,
           }}
         />
+
+        <style id="holderStyle">
+          /* Not only antd, but also any other style if you want to use ssr. */
+          *, *::before, *::after {`transition: none!important;`}
+        </style>
+        <link
+          rel="stylesheet"
+          href="https://unpkg.com/antd@3.16.2/dist/antd.min.css"
+        />
       </head>
       <body className={inter.className}>{children}</body>
     </html>
