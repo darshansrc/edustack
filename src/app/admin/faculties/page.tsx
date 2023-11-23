@@ -125,25 +125,30 @@ const ManageFaculties = () => {
       title: "Faculty Name",
       dataIndex: "facultyName",
       key: "facultyName",
+      width: 100,
     },
     {
       title: "Email",
       dataIndex: "facultyEmail",
       key: "facultyEmail",
+      width: 100,
     },
     {
       title: "Designation",
       dataIndex: "facultyDesignation",
       key: "facultyDesignation",
+      width: 100,
     },
     {
       title: "Department",
       dataIndex: "facultyDepartment",
       key: "facultyDepartment",
+      width: 100,
     },
     {
       title: "Action",
       key: "action",
+      width: 100,
       render: (text: string, record: FacultyData) => (
         <Space size="middle">
           <Button
