@@ -169,7 +169,9 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
             semester: doc.data().semester,
             theoryLab: doc.data().theoryLab,
           }))
-          .filter((subject) => subject.semester === selectedSemester);
+          .filter(
+            (subject) => subject.semester.toString() === selectedSemester
+          );
 
         setSubjectData(fetchedSubjectData);
         setDataFetched(true);
