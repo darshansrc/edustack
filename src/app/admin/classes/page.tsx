@@ -22,6 +22,7 @@ import {
   updateDoc,
 } from "@firebase/firestore";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface ClassroomData {
   id: string;
@@ -46,6 +47,8 @@ const ManageClassrooms = () => {
     form.setFieldsValue(classroom || {});
     setIsModalVisible(true);
   };
+
+  const router = useRouter();
 
   const handleCancel = () => {
     setEditingClassroom(null);
@@ -184,7 +187,7 @@ const ManageClassrooms = () => {
           <Button
             type="primary"
             onClick={() => {
-              /* Redirect to /admin/classes/[ID] */
+              router.push(`/admin/classes/${record.id}`);
             }}
           >
             Go to Class
