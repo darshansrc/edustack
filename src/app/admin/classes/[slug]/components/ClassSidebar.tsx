@@ -44,7 +44,7 @@ const ClassSidebar = ({ params }: { params: { slug: string } }) => {
   }, []);
 
   return (
-    <Layout className=" h-screen min-h-screen  z-[50] ">
+    <Layout className=" h-screen min-h-screen  z-[48] ">
       <Sider className="h-full " theme="light">
         <Menu
           mode="inline"

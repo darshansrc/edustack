@@ -150,7 +150,14 @@ const ManageStudents = ({ params }: { params: { slug: string } }) => {
     const requiredFields = ["name", "usn", "email", "labBatch"];
 
     for (const row of csvData) {
+      // Check if any of the required fields are empty
       if (requiredFields.some((field) => !row[field])) {
+        return false;
+      }
+
+      // Check if labBatch contains only numbers between 1, 2, and 3
+      const labBatchValue = parseInt(row["labBatch"], 10);
+      if (isNaN(labBatchValue) || labBatchValue < 1 || labBatchValue > 3) {
         return false;
       }
     }
@@ -203,10 +210,9 @@ const ManageStudents = ({ params }: { params: { slug: string } }) => {
 
       messageApi.success("Student added successfully!");
 
-      setStudentData((prevStudentData) => [
-        ...prevStudentData,
-        sanitizedValues,
-      ]);
+      const newStudent: StudentData = { id: values.usn, ...values };
+
+      setStudentData((prevStudentData) => [...prevStudentData, newStudent]);
     } catch (error) {
       console.error("Error adding student:", error);
     }
@@ -218,29 +224,34 @@ const ManageStudents = ({ params }: { params: { slug: string } }) => {
       dataIndex: "usn",
       key: "usn",
       width: 100,
+      className: "text-[12px]",
     },
     {
       title: "Student Name",
       dataIndex: "name",
       key: "name",
       width: 100,
+      className: "text-[12px]",
     },
     {
       title: "Email",
       dataIndex: "email",
       key: "email",
       width: 100,
+      className: "text-[12px]",
     },
     {
       title: "Lab Batch",
       dataIndex: "labBatch",
       key: "labBatch",
+      className: "text-[12px]",
       width: 100,
       render: (text: string) => <span>Batch {text}</span>,
     },
     {
       title: "Action",
       key: "action",
+      className: "text-[12px]",
       width: 100,
       render: (text: string, record: StudentData) => (
         <Space size="middle">
