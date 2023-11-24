@@ -48,6 +48,12 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
   const [facultyData, setFacultyData] = useState<any[]>([]);
 
   const [currentSemester, setCurrentSemester] = useState<string>("");
+  const [studentData, setStudentData] = useState<any[]>([]);
+
+  const [electiveStudents, setElectiveStudents] = useState<string[]>([]);
+  const [isModalElectiveVisible, setIsModalElectiveVisible] = useState(false);
+
+  const [isSubjectElective, setIsSubjectElective] = useState(false);
 
   useEffect(() => {
     const fetchClassDetails = async () => {
@@ -91,6 +97,10 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
   const showModal = (subject?: SubjectData) => {
     setEditingSubject(subject || null);
     form.setFieldsValue(subject || {});
+    if (subject?.compulsoryElective === "elective") {
+      // Show the modal for selecting elective students
+      setIsSubjectElective(true);
+    }
     setIsModalVisible(true);
   };
 
@@ -98,6 +108,7 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
     setEditingSubject(null);
     form.resetFields();
     setIsModalVisible(false);
+    setIsSubjectElective(false);
   };
 
   const onFinish = async (values: any) => {
@@ -111,7 +122,11 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
           "subjects",
           editingSubject.id
         );
-        await setDoc(subjectDocRef, { ...values, semester: selectedSemester });
+        await setDoc(subjectDocRef, {
+          ...values,
+          semester: selectedSemester,
+          ...(electiveStudents && { electiveStudents }),
+        });
         messageApi.success("Subject updated successfully!");
         setSubjectData((prevSubjectData) =>
           prevSubjectData.map((subject) =>
@@ -124,7 +139,11 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
         // Add new subject
         const docRef = await setDoc(
           doc(db, "database", params.slug, "subjects", values.code),
-          { ...values, semester: selectedSemester }
+          {
+            ...values,
+            semester: selectedSemester,
+            ...(electiveStudents && { electiveStudents }),
+          }
         );
         messageApi.success("Subject added successfully!");
         const newSubject: SubjectData = { id: values.code, ...values };
@@ -189,42 +208,43 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
       dataIndex: "code",
       key: "code",
       width: 100,
-    },
-    {
-      title: "Compulsory/Elective",
-      dataIndex: "compulsoryElective",
-      key: "compulsoryElective",
-      width: 150,
-    },
-    {
-      title: "Faculties",
-      dataIndex: "faculties",
-      key: "faculties",
-      width: 150,
-      render: (faculties: string[]) => faculties.join(", "),
+      className: "text-[12px]",
     },
     {
       title: "Name",
       dataIndex: "name",
       key: "name",
       width: 150,
+      className: "text-[12px]",
     },
     {
-      title: "Semester",
-      dataIndex: "semester",
-      key: "semester",
+      title: "Subject Type",
+      dataIndex: "compulsoryElective",
+      key: "compulsoryElective",
       width: 100,
+      className: "text-[12px]",
     },
+
     {
       title: "Theory/Lab",
       dataIndex: "theoryLab",
       key: "theoryLab",
       width: 100,
+      className: "text-[12px]",
+    },
+    {
+      title: "Faculties",
+      dataIndex: "faculties",
+      key: "faculties",
+      width: 100,
+      className: "text-[12px]",
+      render: (faculties: string[]) => faculties.join(", "),
     },
     {
       title: "Action",
       key: "action",
       width: 100,
+      className: "text-[12px]",
       render: (text: string, record: SubjectData) => (
         <Space size="middle">
           <Button
@@ -249,6 +269,26 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
       ),
     },
   ];
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const studentSnapshot = await getDocs(
+          collection(db, "database", params.slug, "students")
+        );
+        const fetchedStudentData: any[] = studentSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          name: doc.data().name,
+          usn: doc.data().usn,
+        }));
+        setStudentData(fetchedStudentData);
+      } catch (error) {
+        messageApi.error("Error fetching students!");
+      }
+    };
+
+    fetchStudents();
+  }, []);
 
   const handleSemesterChange = (value: string) => {
     setSelectedSemester(value);
@@ -337,16 +377,46 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
               { required: true, message: "Please select Compulsory/Elective!" },
             ]}
           >
-            <Select placeholder="Select Compulsory/Elective">
+            <Select
+              placeholder="Select Compulsory/Elective"
+              onChange={(value) => {
+                if (value === "elective") {
+                  // Show the modal for selecting elective students
+                  setIsSubjectElective(true);
+                } else if (value === "compulsory") {
+                  setIsSubjectElective(false);
+                }
+              }}
+            >
               <Select.Option value="compulsory">Compulsory</Select.Option>
               <Select.Option value="elective">Elective</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item
-            label="Faculties"
-            name="faculties"
-            rules={[{ required: true, message: "Please select faculties!" }]}
-          >
+
+          {isSubjectElective && (
+            <Form.Item
+              label="Select Students"
+              name="students"
+              rules={[
+                {
+                  required: true,
+                  message: "Please select students for this elective subject!",
+                },
+              ]}
+            >
+              <Select
+                mode="multiple"
+                placeholder="Select students who are studying this Elective Subject"
+              >
+                {studentData.map((student) => (
+                  <Select.Option key={student.usn} value={student.usn}>
+                    {student.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          )}
+          <Form.Item label="Faculties" name="faculties">
             <Select mode="multiple" placeholder="Select faculties">
               {/* Add options based on faculty data */}
               {facultyData.map((faculty) => (
