@@ -267,7 +267,7 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
           >
             {["1", "2", "3", "4", "5", "6", "7", "8"].map((semester) => (
               <Select.Option key={semester} value={semester}>
-                Semester {semester}
+                {semester}-SEM
               </Select.Option>
             ))}
           </Select>

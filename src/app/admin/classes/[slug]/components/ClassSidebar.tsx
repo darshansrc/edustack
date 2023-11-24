@@ -63,8 +63,10 @@ const ClassSidebar = ({ params }: { params: { slug: string } }) => {
               style={{ width: 300 }}
             >
               <p className="text-[12px]">Classroom ID: {params.slug}</p>
-              <p>Ongoing Semester: {ongoingSemester}-SEM</p>
-              <p>Class Staus: {classStatus}</p>
+              <p className="text-[12px]">
+                Ongoing Semester: {ongoingSemester}-SEM
+              </p>
+              <p className="text-[12px]">Class Staus: {classStatus}</p>
             </Card>
           </div>
 
