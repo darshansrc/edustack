@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { BsFillPeopleFill, BsPeople, BsStack } from "react-icons/bs";
-import { HiDocumentText } from "react-icons/hi";
-import { IoCalendarNumber } from "react-icons/io5";
+import { HiDocumentReport, HiDocumentText } from "react-icons/hi";
+import { RiGraduationCapFill } from "react-icons/ri";
 import {
+  FaBook,
   FaChalkboardUser,
   FaCircleUser,
   FaUserGraduate,
@@ -14,43 +15,64 @@ import { AiFillHome } from "react-icons/ai";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 
-import { Layout, Menu, Popconfirm, theme } from "antd";
+import { Card, Layout, Menu, Popconfirm, theme } from "antd";
 import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase-config";
-import { MdLogout, MdSpaceDashboard } from "react-icons/md";
+import { auth, db } from "@/lib/firebase-config";
+import { doc, getDoc } from "@firebase/firestore";
 
 const { SubMenu } = Menu;
 const { Sider } = Layout;
 
 const ClassSidebar = ({ params }: { params: { slug: string } }) => {
   const pathname = usePathname() || "";
-
+  const [ongoingSemester, setOngoingSemester] = useState<string>("");
+  const [classStatus, setClassStatus] = useState<string>("");
   const router = useRouter();
 
-  const handleSignOut = async () => {
-    signOut(auth);
-    const response = await fetch(`${window.location.origin}/api/auth/signout`, {
-      method: "POST",
-    });
-    if (response.status === 200) {
-      router.push("/");
-    }
-  };
+  useEffect(() => {
+    const fetchClassDetails = async () => {
+      const classRef = doc(db, "database", params.slug);
+      const classSnap = await getDoc(classRef);
+
+      if (classSnap.exists()) {
+        console.log(classSnap.data());
+        setOngoingSemester(classSnap.data().currentSemester);
+        setClassStatus(classSnap.data().classroomStatus);
+      }
+    };
+    fetchClassDetails();
+  }, []);
 
   return (
     <Layout className=" h-screen min-h-screen  z-[50] ">
       <Sider className="h-full " theme="light">
-        <div className="min-h-[10px]"></div>
-
         <Menu
           mode="inline"
-          className="w-full"
+          className="w-full h-full"
           theme="light"
           defaultSelectedKeys={[pathname]}
         >
+          <div className="min-h-[10px]"></div>
+
+          <div className="w-full flex items-center">
+            <Card
+              title="Class Details"
+              className="max-w-11/12 rounded-none text-[12px]"
+              size="small"
+              bordered={false}
+              style={{ width: 300 }}
+            >
+              <p className="text-[12px]">Classroom ID: {params.slug}</p>
+              <p>Ongoing Semester: {ongoingSemester}-SEM</p>
+              <p>Class Staus: {classStatus}</p>
+            </Card>
+          </div>
+
+          <div className="min-h-[10px]"></div>
+
           <Menu.Item
             key={`/admin/classes/${params.slug}/students`}
-            icon={<MdSpaceDashboard />}
+            icon={<FaUserGroup />}
           >
             <Link href={`/admin/classes/${params.slug}/students`}>
               Students
@@ -59,7 +81,7 @@ const ClassSidebar = ({ params }: { params: { slug: string } }) => {
 
           <Menu.Item
             key={`/admin/classes/${params.slug}/subjects`}
-            icon={<MdSpaceDashboard />}
+            icon={<FaBook />}
           >
             <Link href={`/admin/classes/${params.slug}/subjects`}>
               Subjects
@@ -68,7 +90,7 @@ const ClassSidebar = ({ params }: { params: { slug: string } }) => {
 
           <Menu.Item
             key={`/admin/classes/${params.slug}/internals`}
-            icon={<MdSpaceDashboard />}
+            icon={<HiDocumentReport />}
           >
             <Link href={`/admin/classes/${params.slug}/subjects`}>
               Internals
@@ -77,7 +99,7 @@ const ClassSidebar = ({ params }: { params: { slug: string } }) => {
 
           <Menu.Item
             key={`/admin/classes/${params.slug}/SEE`}
-            icon={<MdSpaceDashboard />}
+            icon={<RiGraduationCapFill />}
           >
             <Link href={`/admin/classes/${params.slug}/SEE`}>SEE</Link>
           </Menu.Item>
