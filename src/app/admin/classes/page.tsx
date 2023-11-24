@@ -184,7 +184,10 @@ const ManageClassrooms = () => {
           >
             Edit
           </Button>
-          <Button type="primary" href={`/admin/classes/${record.id}`}>
+          <Button
+            type="primary"
+            onClick={() => router.push(`/admin/classes/${record.id}/students`)}
+          >
             Go to Class
           </Button>
         </Space>

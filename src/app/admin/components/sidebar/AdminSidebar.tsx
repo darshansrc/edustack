@@ -40,15 +40,19 @@ const AdminSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    if (pathname.startsWith("/admin/classes")) {
+    if (
+      pathname.endsWith("/students") ||
+      pathname.endsWith("/subjects") ||
+      pathname.endsWith("/internals") ||
+      pathname.endsWith("/SEE")
+    ) {
       setCollapsed(true);
     }
-
-    const storedCollapsed = localStorage.getItem("collapsed");
-    if (storedCollapsed && pathname != "/admin/classes") {
-      setCollapsed(storedCollapsed === "true");
-    }
-  }, []);
+    // const storedCollapsed = localStorage.getItem("collapsed");
+    // if (storedCollapsed && pathname != "/admin/classes") {
+    //   setCollapsed(storedCollapsed === "true");
+    // }
+  });
 
   useEffect(() => {
     localStorage.setItem("collapsed", collapsed.toString());
