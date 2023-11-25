@@ -1,0 +1,126 @@
+.scheduleContainer {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.schedulePage {
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+  width: 550px;
+  max-width: 95vw;
+}
+
+.button {
+  background-color: #fafafa;
+  color: #fff;
+  border: none;
+  padding: 3px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 0px;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  color: #333;
+}
+
+.todayButton {
+  background-color: #fafafa;
+  color: #ffffff;
+  border: 1px solid #0577fb;
+  padding: 3px;
+  border-radius: 5px;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  background-color: #0577fb;
+  font-size: 12px;
+  cursor: pointer;
+}
+.todayButtonDisabled {
+  background-color: #fafafa;
+  color: #0577fb;
+  border: 1px solid #0577fb;
+  padding: 3px;
+  border-radius: 5px;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  background-color: rgb(255, 255, 255);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.selectedDateBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 10px 0;
+}
+
+.selectedDate {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  padding-left: 15px;
+}
+
+.dateGrid {
+  display: flex;
+  padding: 10px 0;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.dateContainer {
+  display: flex;
+  align-items: center;
+  text-align: center;
+}
+
+.date {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  padding: 5px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+  width: 10vw;
+  max-width: 50px;
+}
+
+.day {
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.selectedDateDiv {
+  background-color: #0577fb;
+  color: #ffffff;
+}
+
+.currentDateDiv {
+  background-color: rgb(255, 255, 255);
+  color: #0577fb;
+  border: 1px solid #0577fb;
+}
+
+.noClassContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 30px;
+
+  border-radius: 10px;
+  width: 90%;
+  background-color: white;
+  max-width: 550px;
+  height: calc(100vh - 350px);
+  border: 1px dashed #00000037;
+}

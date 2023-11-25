@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { BsFillPeopleFill, BsPeople, BsStack } from "react-icons/bs";
 import { HiDocumentReport, HiDocumentText } from "react-icons/hi";
 import { RiGraduationCapFill } from "react-icons/ri";
+import { ArrowRight, CalendarBlank } from "phosphor-react";
 import {
   FaBook,
   FaChalkboardUser,
@@ -104,6 +105,15 @@ const ClassSidebar = ({ params }: { params: { slug: string } }) => {
             icon={<RiGraduationCapFill />}
           >
             <Link href={`/admin/classes/${params.slug}/SEE`}>SEE</Link>
+          </Menu.Item>
+
+          <Menu.Item
+            key={`/admin/classes/${params.slug}/schedule`}
+            icon={<CalendarBlank size={16} />}
+          >
+            <Link href={`/admin/classes/${params.slug}/schedule`}>
+              Schedule
+            </Link>
           </Menu.Item>
         </Menu>
       </Sider>
