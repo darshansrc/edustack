@@ -142,6 +142,7 @@ const ManageStudents = ({ params }: { params: { slug: string } }) => {
             dataSource={studentData}
             size="small"
             className="w-full min-w-full max-w-[calc(100%-200px)]"
+            pagination={false}
           />
         ) : (
           <Skeleton active className="w-full p-10 max-w-[calc(100%-200px)]" />

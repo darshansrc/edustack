@@ -9,6 +9,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }
 
+  if (!session && pathname == "/") {
+    return NextResponse.redirect(new URL("/auth/admin", request.url));
+  }
+
   if (!session && pathname == "/admin") {
     return NextResponse.redirect(new URL("/auth/admin", request.url));
   }
