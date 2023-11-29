@@ -12,6 +12,7 @@
     "@ant-design/cssinjs": "^1.17.3",
     "@ant-design/static-style-extract": "^1.0.2",
     "@next/font": "^14.0.3",
+    "@react-pdf/renderer": "^3.1.14",
     "antd": "^5.11.2",
     "firebase": "^10.6.0",
     "firebase-admin": "^11.11.0",
@@ -21,7 +22,8 @@
     "react": "^18",
     "react-cookie": "^6.1.1",
     "react-dom": "^18",
-    "react-icons": "^4.12.0"
+    "react-icons": "^4.12.0",
+    "react-pdf": "^7.5.1"
   },
   "devDependencies": {
     "@types/node": "^20",
