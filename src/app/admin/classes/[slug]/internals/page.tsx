@@ -14,7 +14,7 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
   const [studentData, setStudentData] = useState([]);
   const [subjectData, setSubjectData] = useState([]);
   const [dataFetched, setDataFetched] = useState(false);
-  const [selectedSemester, setSelectedSemester] = useState("2");
+  const [selectedSemester, setSelectedSemester] = useState("");
   const [activeTab, setActiveTab] = useState("CIE-1");
   const handleDownloadAll = async () => {
     try {
@@ -92,6 +92,18 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
     }
   };
 
+  useEffect(() => {
+    const fetchClassDetails = async () => {
+      const classRef = doc(db, "database", params.slug);
+      const classSnap = await getDoc(classRef);
+
+      if (classSnap.exists()) {
+        setSelectedSemester(classSnap.data().currentSemester.toString());
+      }
+    };
+    fetchClassDetails();
+  }, []);
+
   // Function to fetch students
   const fetchStudents = async (test) => {
     try {
@@ -125,7 +137,7 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
           "database",
           params.slug,
           "internals",
-          "2SEM",
+          selectedSemester + "SEM",
           test,
           subject.code
         );
