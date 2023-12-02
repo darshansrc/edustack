@@ -15,7 +15,12 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
   const [subjectData, setSubjectData] = useState([]);
   const [dataFetched, setDataFetched] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState("");
-  const [activeTab, setActiveTab] = useState("CIE-1");
+  const [activeTab, setActiveTab] = useState("");
+
+  useEffect(() => {
+    setActiveTab("CIE-1");
+    fetchStudents("CIE-1");
+  }, [selectedSemester, subjectData]);
 
   const fetchSubjects = async () => {
     try {
@@ -80,6 +85,21 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
       }));
 
       for (const subject of subjectData) {
+        // Initialize test marks and max marks properties
+        fetchedStudentData.forEach((student) => {
+          student.testMarks[subject.code] = {
+            obtainedTestMarks: "-",
+            obtainedAssignmentMarks: "-",
+            subjectName: subject.name,
+            maximumTestMarks: "-",
+            maximumAssignmentMarks: "-",
+            attendance: {
+              totalClassesHeld: 0,
+              totalClassesAttended: 0,
+            },
+          };
+        });
+
         const testMarksDocRef = doc(
           db,
           "database",
@@ -116,14 +136,14 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
               // Handle the map structure of studentMarks
               fetchedStudentData[studentIndex].testMarks[subject.code] = {
                 obtainedTestMarks:
-                  data.studentMarks[studentId]?.obtainedTestMarks,
+                  data.studentMarks[studentId]?.obtainedTestMarks || "-",
                 obtainedAssignmentMarks:
-                  data.studentMarks[studentId]?.obtainedAssignmentMarks,
+                  data.studentMarks[studentId]?.obtainedAssignmentMarks || "-",
                 subjectName: subject.name,
-                maximumTestMarks: data.maxTestMarks,
-                maximumAssignmentMarks: data.maxAssignmentMarks,
+                maximumTestMarks: data.maxTestMarks || "-",
+                maximumAssignmentMarks: data.maxAssignmentMarks || "-",
                 attendance: {
-                  totalClassesHeld: attendanceSnapshot?.size || 0,
+                  totalClassesHeld: 0,
                   totalClassesAttended: 0,
                 },
               };
@@ -150,11 +170,9 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
                 if (student.Present) {
                   attendanceObject.totalClassesAttended += 1;
                 }
-              } else {
-                console.error(
-                  "Attendance object is undefined or null:",
-                  fetchedStudentData[studentIndex]
-                );
+                if (student.usn) {
+                  attendanceObject.totalClassesHeld += 1;
+                }
               }
             }
           });
@@ -240,7 +258,7 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
                   (studentMarks.attendance.totalClassesAttended /
                     studentMarks.attendance.totalClassesHeld) *
                   100
-                ).toFixed(2)}%`
+                ).toFixed(0)}%`
               : "-";
           },
         },

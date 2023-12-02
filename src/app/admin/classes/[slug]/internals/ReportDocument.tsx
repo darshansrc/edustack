@@ -271,7 +271,12 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
                       {(marks as any)?.attendance.totalClassesAttended || "-"}
                     </Text>
                     <Text style={[styles.text, styles.tableCell]}>
-                      -{/* {attendancePercentage || "-"} */}
+                      {(
+                        ((marks as any)?.attendance.totalClassesAttended /
+                          (marks as any)?.attendance.totalClassesHeld) *
+                        100
+                      ).toFixed(0)}
+                      %
                     </Text>
                     <Text style={[styles.text, styles.tableCell]}>
                       {(marks as any)?.obtainedTestMarks || "-"}
