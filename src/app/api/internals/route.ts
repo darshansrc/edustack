@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
   let StudentData: any[] = [];
   let subjectData: any[] = [];
   let selectedSemester: string = "";
+  let branch: string = "";
 
   if (classId) {
     const classRef = doc(db, "database", classId);
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
 
     if (classSnap.exists()) {
       selectedSemester = classSnap.data().currentSemester.toString();
+      branch = classSnap.data().branch;
     }
 
     const subjectSnapshot = await getDocs(
@@ -70,6 +72,9 @@ export async function POST(request: NextRequest) {
         motherName: doc.data().motherName,
         motherEmail: doc.data().motherEmail,
         motherPhone: doc.data().motherPhone,
+        semester: selectedSemester,
+        branch: branch,
+        testName: test,
         testMarks: {},
       }));
 

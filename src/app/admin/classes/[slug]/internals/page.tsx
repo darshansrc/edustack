@@ -25,6 +25,7 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
     const fetchData = async () => {
       try {
         const classId = params.slug;
+        setDataFetched(false);
         const res = await fetch(`${window.location.origin}/api/internals`, {
           method: "POST",
           headers: {
@@ -42,6 +43,8 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
         }
 
         if (!res.ok) {
+          setDataFetched(true);
+          message.error("Unable to fetch data");
         }
       } catch (error) {
         console.log("Unable to save changes");
@@ -134,12 +137,11 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
           fileName={`StudentReport_${record.usn}.pdf`}
         >
           {({ blob, url, loading, error }) =>
-            loading ? <Spin /> : "Download Report"
+            loading ? "Generating Report..." : "Download Report"
           }
         </PDFDownloadLink>
       ),
     },
-    // Add more static columns based on your data
   ];
 
   const columns = [...staticColumns, ...generateColumns()];
@@ -152,8 +154,6 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
         <TabPane tab="CIE 3" key="CIE-3" />
       </Tabs>
 
-      {/* <Button onClick={handleDownloadAll}>Download All Reports (ZIP)</Button> */}
-
       {dataFetched ? (
         <Table
           dataSource={studentData}
@@ -163,7 +163,9 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
           pagination={{ pageSize: 10 }}
         />
       ) : (
-        <Spin tip="Loading..." />
+        <div className="w-full flex flex-row items-center justify-center h-48">
+          <Spin tip="Loading..." />
+        </div>
       )}
     </div>
   );

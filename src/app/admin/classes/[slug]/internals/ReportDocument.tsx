@@ -8,11 +8,17 @@ import {
   Image,
   Font,
 } from "@react-pdf/renderer";
+import RomanNumerals from "roman-numerals";
 
 interface Student {
   id: string;
   name: string;
   usn: string;
+  semester: string;
+  branch: string;
+  fatherName: string;
+  motherName: string;
+  testName: string;
   testMarks: Record<
     string,
     {
@@ -111,7 +117,16 @@ const styles = StyleSheet.create({
 });
 
 const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
-  console.log(studentData);
+  const semesterToRoman = (semester) => {
+    const num = parseInt(semester, 10);
+    if (isNaN(num) || num <= 0 || num > 3999) {
+      // Handle invalid input
+      return "Invalid semester";
+    }
+
+    return RomanNumerals.toRoman(num);
+  };
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -169,16 +184,19 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
         ></View>
         {studentData?.map((student) => (
           <View key={student?.id} style={styles.fullPage}>
-            <Text style={styles.title}></Text>
-            <Text style={styles.title}>PROGRESS REPORT-</Text>
+            <Text style={styles.title}>DEPARTMENT OF {student?.branch}</Text>
+            <Text style={styles.title}>
+              PROGRESS REPORT {student?.testName}
+            </Text>
             <Text style={styles.text}>To,</Text>
             <Text style={styles.parentName}>
-              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Mr/Mrs.
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Mr/Mrs. {student?.fatherName}
             </Text>
             <Text style={styles.subtitle}>
               &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The progress
-              report of your ward {student?.name}, {student?.usn} studying in
-              {/* {student?.semester || "-"} is given below: */}
+              report of your ward {student?.name}, {student?.usn} studying in{" "}
+              {semesterToRoman(student?.semester || "-")} Semester (
+              {student?.branch || "-"}) is given below:
             </Text>
             <View style={styles.table}>
               <View style={styles.tableRow}>
@@ -298,8 +316,9 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
               Remarks: {/* {student?.Remarks || "-"} */}
             </Text>
             <Text style={styles.text}>
-              Please download, sign and send the scanned copy of the report to “
-              {/* {student?.councillorEmail || "-"}” . */}
+              Please download, sign and send the scanned copy of the report to
+              your counsellor as soon as possible.
+              {/* "{student?.councillorEmail || "-"}"" . */}
             </Text>
           </View>
         ))}
