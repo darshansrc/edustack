@@ -3,10 +3,14 @@ import { useState, useEffect } from "react";
 import { Tabs, Table, Spin, message, Button } from "antd";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
-import ReactPDF, { BlobProvider, usePDF } from "@react-pdf/renderer";
+import ReactPDF, { BlobProvider, pdf, usePDF } from "@react-pdf/renderer";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import ReportDocument from "./ReportDocument";
 import JSZip from "jszip"; // Import JSZip
+import ReactDOM from "react-dom";
+import test from "node:test";
+import emailjs from "emailjs-com";
+import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 
 const { TabPane } = Tabs;
 
@@ -146,6 +150,107 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
 
   const columns = [...staticColumns, ...generateColumns()];
 
+  const handleDownloadAllReports = async () => {
+    const zip = new JSZip();
+
+    for (const student of studentData) {
+      const blob = await pdf(
+        <ReportDocument studentData={[student]} />
+      ).toBlob();
+      zip.file(`StudentReport_${activeTab}_${student.usn}.pdf`, blob);
+    }
+
+    zip.generateAsync({ type: "blob" }).then((content) => {
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(content);
+      link.download = "AllStudentReports.zip";
+      link.click();
+    });
+  };
+
+  function base64ToArrayBuffer(base64) {
+    const binaryString = window.atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
+
+  const handleSendEmails = async () => {
+    for (const student of studentData) {
+      const pdfBlob = await pdf(
+        <ReportDocument studentData={[student]} />
+      ).toBlob();
+      const base64Pdf = await blobToBase64(pdfBlob);
+
+      try {
+        const storage = getStorage();
+        const ReportStorageRef = ref(storage, "progress-report");
+        const ReportRef = ref(ReportStorageRef, `${student.fatherEmail}.pdf`);
+
+        // Convert base64 to Uint8Array
+        const arrayBuffer = base64ToArrayBuffer(base64Pdf);
+        const uint8Array = new Uint8Array(arrayBuffer);
+
+        try {
+          // Upload Uint8Array to Google Cloud Storage
+          await uploadBytes(ReportRef, uint8Array);
+        } catch (error) {
+          console.error("Error uploading the file:", error);
+        }
+
+        const url = await getDownloadURL(
+          ref(storage, `progress-report/${student.fatherEmail}.pdf`)
+        );
+
+        const response = await fetch("/api/email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            to: student.fatherEmail,
+            from: "admin@edu-stack.com",
+            subject: `Report for ${student.name}`,
+            text: `Here is the report for ${student.name}`,
+            attachment: base64Pdf,
+            url: url,
+            phone: student.fatherPhone,
+          }),
+        });
+
+        if (response.ok) {
+          message.success(
+            "Progress report sent successfully for " + student.name
+          );
+        }
+
+        if (!response.ok) {
+          message.error("Error sending email for " + student.name);
+          throw new Error("Error sending email");
+        }
+
+        console.log("Email sent");
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
+
+  const blobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = () => {
+        // Explicitly cast reader.result to string
+        const resultString = reader.result as string;
+        resolve(resultString.split(",")[1]);
+      };
+      reader.readAsDataURL(blob);
+    });
+  };
+
   return (
     <div>
       <Tabs activeKey={activeTab} onChange={handleTabChange}>
@@ -153,7 +258,10 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
         <TabPane tab="CIE 2" key="CIE-2" />
         <TabPane tab="CIE 3" key="CIE-3" />
       </Tabs>
-
+      <Button onClick={() => handleDownloadAllReports()}>
+        Download All Reports
+      </Button>
+      <Button onClick={handleSendEmails}>Send Emails</Button>
       {dataFetched ? (
         <Table
           dataSource={studentData}

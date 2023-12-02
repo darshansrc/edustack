@@ -13,7 +13,9 @@
     "@ant-design/static-style-extract": "^1.0.2",
     "@next/font": "^14.0.3",
     "@react-pdf/renderer": "^3.1.14",
-    "antd": "^5.11.2",
+    "@sendgrid/mail": "^7.7.0",
+    "antd": "^5.11.5",
+    "emailjs-com": "^3.2.0",
     "file-saver": "^2.0.5",
     "firebase": "^10.6.0",
     "firebase-admin": "^11.11.0",
@@ -22,6 +24,7 @@
     "jszip": "^3.10.1",
     "keep-react": "^1.0.2",
     "next": "14.0.3",
+    "nodemailer": "^6.9.7",
     "phosphor-react": "^1.4.1",
     "react": "^18",
     "react-cookie": "^6.1.1",
@@ -29,7 +32,8 @@
     "react-icons": "^4.12.0",
     "react-pdf": "^7.5.1",
     "react-pdf-js": "^5.1.0",
-    "roman-numerals": "^0.3.2"
+    "roman-numerals": "^0.3.2",
+    "twilio": "^4.19.3"
   },
   "devDependencies": {
     "@types/node": "^20",
