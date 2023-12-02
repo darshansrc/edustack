@@ -246,14 +246,15 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
   const columns = [...staticColumns, ...generateColumns()];
 
   // Fetch subjects on initial load
+
   useEffect(() => {
     fetchSubjects();
-  }, [selectedSemester, params.slug]);
+  }, [selectedSemester]);
 
   // Fetch students when the active tab changes
   useEffect(() => {
     fetchStudents(activeTab);
-  }, [activeTab, fetchStudents]);
+  }, [activeTab]);
 
   return (
     <div>
