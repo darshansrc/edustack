@@ -1,11 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Tabs, Table, Spin, message } from "antd";
+import { Tabs, Table, Spin, message, Button } from "antd";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
-import ReactPDF from "@react-pdf/renderer";
+import ReactPDF, { BlobProvider, usePDF } from "@react-pdf/renderer";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import ReportDocument from "./ReportDocument";
+import JSZip from "jszip"; // Import JSZip
 
 const { TabPane } = Tabs;
 
@@ -15,6 +16,54 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
   const [dataFetched, setDataFetched] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState("2");
   const [activeTab, setActiveTab] = useState("CIE-1");
+  const handleDownloadAll = async () => {
+    try {
+      const zip = new JSZip();
+
+      for (const student of studentData) {
+        const pdfDocument = <ReportDocument studentData={[student]} />;
+        const [instance, updateInstance] = usePDF({ document: pdfDocument });
+
+        try {
+          // Triggering the update to render the PDF and get the blob
+          updateInstance(pdfDocument);
+
+          // Check loading state, if needed
+          if (instance.loading) {
+            // Handle loading state if needed
+            console.log("Loading PDF...");
+            continue;
+          }
+
+          // Check for errors
+          if (instance.error) {
+            // Handle error state if needed
+            console.error("Error generating PDF blob:", instance.error);
+            continue;
+          }
+
+          // Add the blob to the zip file
+          zip.file(`StudentReport_${student.usn}.pdf`, instance.blob);
+        } catch (error) {
+          console.error("Error using usePDF hook:", error);
+        }
+      }
+
+      // Generate zip file
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+
+      // Create download link and trigger click
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(zipBlob);
+      link.download = "AllStudentReports.zip";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error creating zip file:", error);
+      message.error("Error creating zip file");
+    }
+  };
 
   // Function to fetch subjects
   const fetchSubjects = async () => {
@@ -201,6 +250,8 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
         <TabPane tab="CIE 2" key="CIE-2" />
         <TabPane tab="CIE 3" key="CIE-3" />
       </Tabs>
+
+      <Button onClick={handleDownloadAll}>Download All Reports (ZIP)</Button>
 
       {dataFetched ? (
         <Table

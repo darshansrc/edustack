@@ -161,18 +161,16 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => (
       ></View>
       {studentData?.map((student) => (
         <View key={student?.id} style={styles.fullPage}>
-          <Text style={styles.title}>{student?.Branch || "-"}</Text>
-          <Text style={styles.title}>
-            PROGRESS REPORT-{student?.ProgressReportNumber || "-"}
-          </Text>
+          <Text style={styles.title}></Text>
+          <Text style={styles.title}>PROGRESS REPORT-</Text>
           <Text style={styles.text}>To,</Text>
           <Text style={styles.parentName}>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Mr/Mrs. {student?.parentName || "-"},
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Mr/Mrs.
           </Text>
           <Text style={styles.subtitle}>
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The progress report
             of your ward {student?.name}, {student?.usn} studying in{" "}
-            {student?.Semester || "-"} is given below:
+            {/* {student?.semester || "-"} is given below: */}
           </Text>
           <View style={styles.table}>
             <View style={styles.tableRow}>
@@ -265,11 +263,11 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => (
           </View>
           <Text style={styles.text}>
             <Text style={{ fontWeight: "black" }}>Remarks:</Text>{" "}
-            {student?.Remarks || "-"}
+            {/* {student?.Remarks || "-"} */}
           </Text>
           <Text style={styles.text}>
             Please download, sign and send the scanned copy of the report to “
-            {student?.councillorEmail || "-"}” .
+            {/* {student?.councillorEmail || "-"}” . */}
           </Text>
         </View>
       ))}
