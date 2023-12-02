@@ -1,4 +1,9 @@
-import { StyleSheet } from "@react-pdf/renderer";
+import { StyleSheet, Font } from "@react-pdf/renderer";
+
+Font.register({
+  family: "Times-Roman",
+  src: "/fonts/tnr.bold.ttf",
+});
 
 const styles = StyleSheet.create({
   title: {
@@ -33,7 +38,7 @@ const styles = StyleSheet.create({
     paddingRight: 20,
   },
   page: {
-    // fontFamily: "Times-Roman",
+    fontFamily: "Times-Roman",
   },
   table: {
     display: "flex",

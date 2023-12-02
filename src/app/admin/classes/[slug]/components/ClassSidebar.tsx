@@ -95,7 +95,7 @@ const ClassSidebar = ({ params }: { params: { slug: string } }) => {
             key={`/admin/classes/${params.slug}/internals`}
             icon={<HiDocumentReport />}
           >
-            <Link href={`/admin/classes/${params.slug}/subjects`}>
+            <Link href={`/admin/classes/${params.slug}/internals`}>
               Internals
             </Link>
           </Menu.Item>

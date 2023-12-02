@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ant-design/cssinjs": "^1.17.3",
+    "@ant-design/cssinjs": "^1.18.0",
     "@ant-design/static-style-extract": "^1.0.2",
     "@next/font": "^14.0.3",
     "@react-pdf/renderer": "^3.1.14",

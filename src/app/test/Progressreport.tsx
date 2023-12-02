@@ -6,9 +6,15 @@ import {
   View,
   StyleSheet,
   Image,
+  Font,
 } from "@react-pdf/renderer";
 
 import styles from "./Styles";
+
+Font.register({
+  family: "Times-Roman",
+  src: "/fonts/tnr.bold.ttf",
+});
 
 const dummyData = {
   Branch: "COMPUTER SCIENCE & ENGINEERING",
@@ -141,6 +147,39 @@ const dummyData = {
       assignmentOrQuizMarks: "10",
       maxAssignmentOrQuizMarks: "10",
     },
+    {
+      SubjectCode: "(21CSL46)",
+      SubjectName: "Python Programming Laboratory",
+      classesHeld: "40",
+      classesAttended: "37",
+      attendancePercentage: "92.5",
+      Tmarks: "30",
+      maxMarks: "40",
+      assignmentOrQuizMarks: "10",
+      maxAssignmentOrQuizMarks: "10",
+    },
+    {
+      SubjectCode: "(21CSL46)",
+      SubjectName: "Python Programming Laboratory",
+      classesHeld: "40",
+      classesAttended: "37",
+      attendancePercentage: "92.5",
+      Tmarks: "30",
+      maxMarks: "40",
+      assignmentOrQuizMarks: "10",
+      maxAssignmentOrQuizMarks: "10",
+    },
+    {
+      SubjectCode: "(21CSL46)",
+      SubjectName: "Python Programming Laboratory",
+      classesHeld: "40",
+      classesAttended: "37",
+      attendancePercentage: "92.5",
+      Tmarks: "30",
+      maxMarks: "40",
+      assignmentOrQuizMarks: "10",
+      maxAssignmentOrQuizMarks: "10",
+    },
   ],
 };
 
@@ -179,7 +218,7 @@ function ProgressReport() {
                 textAlign: "center",
                 justifyContent: "center",
                 alignItems: "center",
-                fontWeight: "bold",
+                fontWeight: "black",
                 color: "red",
                 fontSize: "16px",
               }}
@@ -299,7 +338,10 @@ function ProgressReport() {
               </View>
             ))}
           </View>
-          <Text style={styles.text}>Remarks: {dummyData.Remarks}</Text>
+          <Text style={styles.text}>
+            <Text style={{ fontWeight: "black" }}>Remarks:</Text>{" "}
+            {dummyData.Remarks}
+          </Text>
           <Text style={styles.text}>
             Please download, sign and send the scanned copy of the report to “
             {dummyData.councillorEmail}” .
@@ -308,14 +350,68 @@ function ProgressReport() {
         <View
           style={{
             display: "flex",
-            justifyContent: "space-around",
-            alignItems: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: 50,
+            alignItems: "flex-end",
+            flexDirection: "row",
+            paddingTop: 20,
           }}
         >
-          <View></View>
-          <View></View>
-          <View></View>
+          <View
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              marginTop: 10,
+            }}
+          >
+            <Text style={{ ...styles.text }}>Counsellor</Text>
+          </View>
+          <View
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            {" "}
+            <View
+              style={{
+                maxWidth: "50px",
+                maxHeight: "50px",
+              }}
+            >
+              <Image src="/logorv.png" />
+            </View>
+            <Text style={styles.text}>HOD </Text>{" "}
+          </View>
+          <View
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            {" "}
+            <View
+              style={{
+                maxWidth: "50px",
+                maxHeight: "50px",
+              }}
+            >
+              <Image src="/logorv.png" />
+            </View>
+            <Text style={styles.text}>Principal</Text>
+          </View>
         </View>
+        <View style={{ paddingHorizontal: 50, paddingTop: 5 }}>
+          <Text style={styles.text}>Parent's Remarks:</Text>
+          <Text style={styles.text}>Parent's Signature: </Text>
+        </View>
+
         {/* <Image style={styles.Bimage} src={Bottombanner} /> */}
       </Page>
     </Document>
