@@ -16,56 +16,7 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
   const [dataFetched, setDataFetched] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState("");
   const [activeTab, setActiveTab] = useState("CIE-1");
-  // const handleDownloadAll = async () => {
-  //   try {
-  //     const zip = new JSZip();
 
-  //     for (const student of studentData) {
-  //       const pdfDocument = <ReportDocument studentData={[student]} />;
-  //       const [instance, updateInstance] = usePDF({ document: pdfDocument });
-
-  //       try {
-  //         // Triggering the update to render the PDF and get the blob
-  //         updateInstance(pdfDocument);
-
-  //         // Check loading state, if needed
-  //         if (instance.loading) {
-  //           // Handle loading state if needed
-  //           console.log("Loading PDF...");
-  //           continue;
-  //         }
-
-  //         // Check for errors
-  //         if (instance.error) {
-  //           // Handle error state if needed
-  //           console.error("Error generating PDF blob:", instance.error);
-  //           continue;
-  //         }
-
-  //         // Add the blob to the zip file
-  //         zip.file(`StudentReport_${student.usn}.pdf`, instance.blob);
-  //       } catch (error) {
-  //         console.error("Error using usePDF hook:", error);
-  //       }
-  //     }
-
-  //     // Generate zip file
-  //     const zipBlob = await zip.generateAsync({ type: "blob" });
-
-  //     // Create download link and trigger click
-  //     const link = document.createElement("a");
-  //     link.href = URL.createObjectURL(zipBlob);
-  //     link.download = "AllStudentReports.zip";
-  //     document.body.appendChild(link);
-  //     link.click();
-  //     document.body.removeChild(link);
-  //   } catch (error) {
-  //     console.error("Error creating zip file:", error);
-  //     message.error("Error creating zip file");
-  //   }
-  // };
-
-  // Function to fetch subjects
   const fetchSubjects = async () => {
     try {
       setDataFetched(false);
@@ -104,7 +55,6 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
     fetchClassDetails();
   }, []);
 
-  // Function to fetch students
   const fetchStudents = async (test) => {
     try {
       setDataFetched(false);
@@ -126,12 +76,10 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
         motherName: doc.data().motherName,
         motherEmail: doc.data().motherEmail,
         motherPhone: doc.data().motherPhone,
-        testMarks: {}, // Initialize empty test marks object
+        testMarks: {},
       }));
 
-      // Fetch test marks for each subject
       for (const subject of subjectData) {
-        console.log("Fetching test marks for subject:", subject.code);
         const testMarksDocRef = doc(
           db,
           "database",
@@ -142,38 +90,82 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
           subject.code
         );
 
-        const testMarksDoc = await getDoc(testMarksDocRef);
+        const attendanceCollectionRef = collection(
+          db,
+          "database",
+          params.slug,
+          "attendance",
+          selectedSemester + "SEM",
+          subject.code
+        );
+
+        const [testMarksDoc, attendanceSnapshot] = await Promise.all([
+          getDoc(testMarksDocRef),
+          getDocs(attendanceCollectionRef),
+        ]);
 
         if (testMarksDoc.exists()) {
           const data = testMarksDoc.data();
 
-          // Log test marks data to identify any issues
-          console.log(`Subject Code: ${subject.code}, Data:`, data);
-
-          for (const studentId in data.studentMarks) {
-            const studentIndex = fetchedStudentData.findIndex(
-              (student) => student.id === studentId
+          for (const studentId in data?.studentMarks) {
+            const studentIndex = fetchedStudentData?.findIndex(
+              (student) => student.usn === studentId
             );
 
             if (studentIndex !== -1) {
               // Handle the map structure of studentMarks
               fetchedStudentData[studentIndex].testMarks[subject.code] = {
                 obtainedTestMarks:
-                  data.studentMarks[studentId].obtainedTestMarks,
+                  data.studentMarks[studentId]?.obtainedTestMarks,
                 obtainedAssignmentMarks:
-                  data.studentMarks[studentId].obtainedAssignmentMarks,
+                  data.studentMarks[studentId]?.obtainedAssignmentMarks,
+                subjectName: subject.name,
+                maximumTestMarks: data.maxTestMarks,
+                maximumAssignmentMarks: data.maxAssignmentMarks,
+                attendance: {
+                  totalClassesHeld: attendanceSnapshot?.size || 0,
+                  totalClassesAttended: 0,
+                },
               };
             }
           }
         }
+
+        attendanceSnapshot?.forEach((doc) => {
+          const studentsArray = doc.data()?.students || [];
+
+          studentsArray?.forEach((student) => {
+            const studentIndex = fetchedStudentData?.findIndex(
+              (fetchedStudent) => fetchedStudent.usn === student.usn
+            );
+
+            if (studentIndex !== -1) {
+              // Ensure that the attendance object exists before trying to update it
+              const attendanceObject =
+                fetchedStudentData[studentIndex]?.testMarks[subject.code]
+                  ?.attendance;
+
+              if (attendanceObject) {
+                // Handle attendance data for each student
+                if (student.Present) {
+                  attendanceObject.totalClassesAttended += 1;
+                }
+              } else {
+                console.error(
+                  "Attendance object is undefined or null:",
+                  fetchedStudentData[studentIndex]
+                );
+              }
+            }
+          });
+        });
       }
 
-      console.log("Fetched Student Data:", fetchedStudentData);
-
       setStudentData(fetchedStudentData);
+      console.log("Student Data:", fetchedStudentData);
       setDataFetched(true);
     } catch (error) {
-      message.error("Error fetching students and test marks!");
+      message.error("Error fetching students, test marks, and attendance!");
       console.error(error);
     }
   };
@@ -215,6 +207,43 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
             return studentMarks ? studentMarks.obtainedAssignmentMarks : "-";
           },
         },
+        {
+          title: "Classes held",
+          dataIndex: `testMarks.${subject.code}.attendance.totalClassesHeld`,
+          key: `totalClassesHeld_${subject.code}`,
+          render: (text, record) => {
+            const studentMarks = record.testMarks[subject.code];
+            return studentMarks
+              ? studentMarks.attendance.totalClassesHeld
+              : "-";
+          },
+        },
+        {
+          title: "Classes attended",
+          dataIndex: `testMarks.${subject.code}.attendance.totalClassesAttended`,
+          key: `totalClassesAttended_${subject.code}`,
+          render: (text, record) => {
+            const studentMarks = record.testMarks[subject.code];
+            return studentMarks
+              ? studentMarks.attendance.totalClassesAttended
+              : "-";
+          },
+        },
+        {
+          title: "Attendance Percentage",
+          dataIndex: `testMarks.${subject.code}.attendance.totalClassesAttended`,
+          key: `attendance_${subject.code}`,
+          render: (text, record) => {
+            const studentMarks = record.testMarks[subject.code];
+            return studentMarks
+              ? `${(
+                  (studentMarks.attendance.totalClassesAttended /
+                    studentMarks.attendance.totalClassesHeld) *
+                  100
+                ).toFixed(2)}%`
+              : "-";
+          },
+        },
       ],
     }));
   };
@@ -234,7 +263,7 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
           fileName={`StudentReport_${record.usn}.pdf`}
         >
           {({ blob, url, loading, error }) =>
-            loading ? "Loading document..." : "Download Report"
+            loading ? <Spin /> : "Download Report"
           }
         </PDFDownloadLink>
       ),
