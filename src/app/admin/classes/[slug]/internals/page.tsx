@@ -31,6 +31,7 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ classId, activeTab }),
+          cache: "no-cache",
         });
 
         if (res.ok) {
