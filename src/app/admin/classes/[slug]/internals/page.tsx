@@ -1,217 +1,220 @@
 "use client";
+import { useState, useEffect } from "react";
+import { Tabs, Table, Spin, message } from "antd";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  addDoc,
-  setDoc,
-} from "firebase/firestore";
-import React, { useEffect, useState } from "react";
-import { Button, Table, Modal, Form, Input, Checkbox, message } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import ReactPDF from "@react-pdf/renderer";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import ReportDocument from "./ReportDocument";
 
-interface SubjectData {
-  id: string;
-  code: string;
-  compulsoryElective: string;
-  faculties: string[];
-  name: string;
-  semester: string;
-  theoryLab: string;
-}
+const { TabPane } = Tabs;
 
-const TestDashboard = ({ params }: { params: { slug: string } }) => {
-  const [subjectData, setSubjectData] = useState<SubjectData[]>([]);
-  const [currentSemester, setCurrentSemester] = useState<string>("");
-  const [selectedSemester, setSelectedSemester] = useState<string>(
-    currentSemester.toString()
-  );
-  const [testData, setTestData] = useState<any[]>([]);
-  const [isCreateTestModalVisible, setCreateTestModalVisible] = useState(false);
-  const [testName, setTestName] = useState("");
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+const StudentList = ({ params }: { params: { slug: string } }) => {
+  const [studentData, setStudentData] = useState([]);
+  const [subjectData, setSubjectData] = useState([]);
+  const [dataFetched, setDataFetched] = useState(false);
+  const [selectedSemester, setSelectedSemester] = useState("2");
+  const [activeTab, setActiveTab] = useState("CIE-1");
 
-  useEffect(() => {
-    const fetchClassDetails = async () => {
-      const classRef = doc(db, "database", params.slug);
-      const classSnap = await getDoc(classRef);
+  // Function to fetch subjects
+  const fetchSubjects = async () => {
+    try {
+      setDataFetched(false);
+      const subjectSnapshot = await getDocs(
+        collection(db, "database", params.slug, "subjects")
+      );
 
-      if (classSnap.exists()) {
-        setCurrentSemester(classSnap.data().currentSemester.toString());
-        setSelectedSemester(classSnap.data().currentSemester.toString());
-      }
-    };
-    fetchClassDetails();
-  }, []);
+      const fetchedSubjectData = subjectSnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          code: doc.data().code,
+          compulsoryElective: doc.data().compulsoryElective,
+          faculties: doc.data().faculties,
+          name: doc.data().name,
+          semester: doc.data().semester,
+          theoryLab: doc.data().theoryLab,
+        }))
+        .filter((subject) => subject.semester.toString() === selectedSemester);
 
-  useEffect(() => {
-    const fetchSubjects = async () => {
-      try {
-        const subjectSnapshot = await getDocs(
-          collection(db, "database", params.slug, "subjects")
+      setSubjectData(fetchedSubjectData);
+      setDataFetched(true);
+    } catch (error) {
+      message.error("Error fetching subjects!");
+    }
+  };
+
+  // Function to fetch students
+  const fetchStudents = async (test) => {
+    try {
+      setDataFetched(false);
+
+      const studentSnapshot = await getDocs(
+        collection(db, "database", params.slug, "students")
+      );
+
+      const fetchedStudentData = studentSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        name: doc.data().name,
+        usn: doc.data().usn,
+        email: doc.data().email,
+        labBatch: doc.data().labBatch,
+        phone: doc.data().phone,
+        fatherName: doc.data().fatherName,
+        fatherEmail: doc.data().fatherEmail,
+        fatherPhone: doc.data().fatherPhone,
+        motherName: doc.data().motherName,
+        motherEmail: doc.data().motherEmail,
+        motherPhone: doc.data().motherPhone,
+        testMarks: {}, // Initialize empty test marks object
+      }));
+
+      // Fetch test marks for each subject
+      for (const subject of subjectData) {
+        console.log("Fetching test marks for subject:", subject.code);
+        const testMarksDocRef = doc(
+          db,
+          "database",
+          params.slug,
+          "internals",
+          "2SEM",
+          test,
+          subject.code
         );
 
-        const fetchedSubjectData: SubjectData[] = subjectSnapshot.docs
-          .map((doc) => ({
-            id: doc.id,
-            code: doc.data().code,
-            compulsoryElective: doc.data().compulsoryElective,
-            faculties: doc.data().faculties,
-            name: doc.data().name,
-            semester: doc.data().semester,
-            theoryLab: doc.data().theoryLab,
-          }))
-          .filter(
-            (subject) => subject.semester.toString() === selectedSemester
-          );
+        const testMarksDoc = await getDoc(testMarksDocRef);
 
-        setSubjectData(fetchedSubjectData);
-      } catch (error) {
-        console.error("Error fetching subjects!");
+        if (testMarksDoc.exists()) {
+          const data = testMarksDoc.data();
+
+          // Log test marks data to identify any issues
+          console.log(`Subject Code: ${subject.code}, Data:`, data);
+
+          for (const studentId in data.studentMarks) {
+            const studentIndex = fetchedStudentData.findIndex(
+              (student) => student.id === studentId
+            );
+
+            if (studentIndex !== -1) {
+              // Handle the map structure of studentMarks
+              fetchedStudentData[studentIndex].testMarks[subject.code] = {
+                obtainedTestMarks:
+                  data.studentMarks[studentId].obtainedTestMarks,
+                obtainedAssignmentMarks:
+                  data.studentMarks[studentId].obtainedAssignmentMarks,
+              };
+            }
+          }
+        }
       }
-    };
 
+      console.log("Fetched Student Data:", fetchedStudentData);
+
+      setStudentData(fetchedStudentData);
+      setDataFetched(true);
+    } catch (error) {
+      message.error("Error fetching students and test marks!");
+      console.error(error);
+    }
+  };
+
+  // Handle semester change
+  const handleSemesterChange = (key) => {
+    setSelectedSemester(key);
+    fetchSubjects();
+  };
+
+  // Handle tab change
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+    fetchStudents(key);
+  };
+
+  // Generate dynamic columns based on fetched subjects
+  const generateColumns = () => {
+    return subjectData.map((subject) => ({
+      title: subject.name + " (" + subject.code + ")",
+      dataIndex: subject.code,
+      key: subject.code,
+      children: [
+        {
+          title: "Test",
+          dataIndex: `testMarks.${subject.code}.obtainedTestMarks`,
+          key: `test_${subject.code}`,
+          render: (text, record) => {
+            const studentMarks = record.testMarks[subject.code];
+            return studentMarks ? studentMarks.obtainedTestMarks : "-";
+          },
+        },
+        {
+          title: "Assignment",
+          dataIndex: `testMarks.${subject.code}.obtainedAssignmentMarks`,
+          key: `assignment_${subject.code}`,
+          render: (text, record) => {
+            const studentMarks = record.testMarks[subject.code];
+            return studentMarks ? studentMarks.obtainedAssignmentMarks : "-";
+          },
+        },
+      ],
+    }));
+  };
+
+  // Define static columns for basic student information
+  const staticColumns = [
+    { title: "Name", dataIndex: "name", key: "name" },
+    { title: "USN", dataIndex: "usn", key: "usn" },
+    { title: "Email", dataIndex: "email", key: "email" },
+    {
+      title: "Download Report",
+      dataIndex: "downloadReport",
+      key: "downloadReport",
+      render: (_, record) => (
+        <PDFDownloadLink
+          document={<ReportDocument studentData={[record]} />}
+          fileName={`StudentReport_${record.usn}.pdf`}
+        >
+          {({ blob, url, loading, error }) =>
+            loading ? "Loading document..." : "Download Report"
+          }
+        </PDFDownloadLink>
+      ),
+    },
+    // Add more static columns based on your data
+  ];
+
+  // Combine static and dynamic columns
+  const columns = [...staticColumns, ...generateColumns()];
+
+  // Fetch subjects on initial load
+  useEffect(() => {
     fetchSubjects();
   }, [selectedSemester]);
 
-  const handleCreateTest = () => {
-    setCreateTestModalVisible(true);
-  };
-
-  const handleCreateTestSubmit = async () => {
-    try {
-      // Create a document for each selected subject under the test
-      for (const subject of selectedSubjects) {
-        await setDoc(
-          doc(
-            db,
-            "database",
-            params.slug,
-            "internals",
-            selectedSemester + "SEM",
-            testName,
-            subject
-          ),
-          {}
-        );
-      }
-
-      setCreateTestModalVisible(false);
-      setTestName("");
-      setSelectedSubjects([]);
-
-      fetchTests();
-    } catch (error) {
-      console.error("Error creating test:", error);
-    }
-  };
-  const fetchTests = async () => {
-    try {
-      const testDocRef = doc(
-        db,
-        "database",
-        params.slug,
-        "internals",
-        selectedSemester + "SEM"
-      );
-
-      const subcollections = await getDocs(
-        collection(testDocRef, "subcollectionName")
-      );
-
-      const subcollectionData = [];
-
-      // Iterate through each subcollection
-      for (const subcollection of subcollections.docs) {
-        const subcollectionId = subcollection.id;
-
-        // Fetch documents within the subcollection
-        const documents = await getDocs(
-          collection(testDocRef, "subcollectionName", subcollectionId)
-        );
-
-        // Map documents to data
-        const documentsData = documents.docs.map((doc) => ({
-          id: doc.id,
-          // Add other fields as needed
-        }));
-
-        // Add data to the subcollectionData array
-        subcollectionData.push({
-          subcollectionId,
-          documents: documentsData,
-        });
-      }
-
-      setTestData(subcollectionData);
-    } catch (error) {
-      console.error("Error fetching tests:", error);
-    }
-  };
-
+  // Fetch students when the active tab changes
   useEffect(() => {
-    fetchTests();
-  }, [params.slug, selectedSemester]);
-
-  const columns = [
-    {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-    },
-    // {
-    //   title: "Test Name",
-    //   dataIndex: "name",
-    //   key: "name",
-    // },
-    // {
-    //   title: "Subjects",
-    //   dataIndex: "subjects",
-    //   key: "subjects",
-    //   render: (subjects) => subjects.join(", "),
-    // },
-  ];
+    fetchStudents(activeTab);
+  }, [activeTab]);
 
   return (
     <div>
-      <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateTest}>
-        Create New Test
-      </Button>
+      <Tabs activeKey={activeTab} onChange={handleTabChange}>
+        <TabPane tab="CIE 1" key="CIE-1" />
+        <TabPane tab="CIE 2" key="CIE-2" />
+        <TabPane tab="CIE 3" key="CIE-3" />
+      </Tabs>
 
-      {/* Create/Edit Test Modal */}
-      <Modal
-        title="Create New Test"
-        visible={isCreateTestModalVisible}
-        onOk={handleCreateTestSubmit}
-        onCancel={() => setCreateTestModalVisible(false)}
-      >
-        <Form layout="vertical">
-          <Form.Item label="Test Name">
-            <Input
-              value={testName}
-              onChange={(e) => setTestName(e.target.value)}
-            />
-          </Form.Item>
-          <Form.Item label="Select Subjects">
-            <Checkbox.Group
-              options={subjectData.map((subject) => subject.name)}
-              value={selectedSubjects}
-              onChange={(values) => setSelectedSubjects(values as string[])}
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      <Table
-        columns={columns}
-        dataSource={testData}
-        rowKey={(record) => record.id}
-        pagination={{ pageSize: 10 }}
-      />
+      {dataFetched ? (
+        <Table
+          dataSource={studentData}
+          columns={columns}
+          size="small"
+          rowKey="id"
+          pagination={{ pageSize: 10 }}
+        />
+      ) : (
+        <Spin tip="Loading..." />
+      )}
     </div>
   );
 };
 
-export default TestDashboard;
+export default StudentList;
