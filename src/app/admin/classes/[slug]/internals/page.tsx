@@ -185,24 +185,24 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
       const base64Pdf = await blobToBase64(pdfBlob);
 
       try {
-        const storage = getStorage();
-        const ReportStorageRef = ref(storage, "progress-report");
-        const ReportRef = ref(ReportStorageRef, `${student.fatherEmail}.pdf`);
+        // const storage = getStorage();
+        // const ReportStorageRef = ref(storage, "progress-report");
+        // const ReportRef = ref(ReportStorageRef, `${student.fatherEmail}.pdf`);
 
-        // Convert base64 to Uint8Array
-        const arrayBuffer = base64ToArrayBuffer(base64Pdf);
-        const uint8Array = new Uint8Array(arrayBuffer);
+        // // Convert base64 to Uint8Array
+        // const arrayBuffer = base64ToArrayBuffer(base64Pdf);
+        // const uint8Array = new Uint8Array(arrayBuffer);
 
-        try {
-          // Upload Uint8Array to Google Cloud Storage
-          await uploadBytes(ReportRef, uint8Array);
-        } catch (error) {
-          console.error("Error uploading the file:", error);
-        }
+        // try {
+        //   // Upload Uint8Array to Google Cloud Storage
+        //   await uploadBytes(ReportRef, uint8Array);
+        // } catch (error) {
+        //   console.error("Error uploading the file:", error);
+        // }
 
-        const url = await getDownloadURL(
-          ref(storage, `progress-report/${student.fatherEmail}.pdf`)
-        );
+        // const url = await getDownloadURL(
+        //   ref(storage, `progress-report/${student.fatherEmail}.pdf`)
+        // );
 
         const response = await fetch("/api/email", {
           method: "POST",
@@ -215,7 +215,6 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
             subject: `Report for ${student.name}`,
             text: `Here is the report for ${student.name}`,
             attachment: base64Pdf,
-            url: url,
             phone: student.fatherPhone,
           }),
         });
