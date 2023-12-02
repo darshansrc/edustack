@@ -1,22 +1,30 @@
 "use client";
-import { PDFViewer } from "@react-pdf/renderer";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import { useEffect, useState } from "react";
 import ProgressReport from "./Progressreport";
 
 function ReportPage() {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   return (
     <>
       <div className="h-[100vh] w-[100vw] flex justify-center items-center">
-        <PDFViewer
-          style={{
-            width: "1000px",
-            height: "900px",
-            border: "1px solid black",
-            padding: "10px",
-            backgroundColor: "#f0f0f0",
-          }}
-        >
-          <ProgressReport />
-        </PDFViewer>
+        {isClient && (
+          <div>
+            <PDFDownloadLink
+              document={<ProgressReport />}
+              fileName="somename.pdf"
+            >
+              {({ blob, url, loading, error }) =>
+                loading ? "Loading document..." : "Download now!"
+              }
+            </PDFDownloadLink>
+          </div>
+        )}
       </div>
     </>
   );
