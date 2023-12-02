@@ -210,7 +210,7 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
                   Classes {"\n"} Held
                 </Text>
                 <Text style={[styles.text, styles.tableCell]}>
-                  Classes {"\n"} Att.
+                  Classes {"\n"} Attd.
                 </Text>
                 <Text style={[styles.text, styles.tableCell]}>Att. %</Text>
                 <Text style={[styles.text, styles.tableCell]}>
@@ -268,7 +268,7 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
                       {(marks as any)?.attendance.totalClassesHeld || "-"}
                     </Text>
                     <Text style={[styles.text, styles.tableCell]}>
-                      {(marks as any)?.attendance.totalClassesAttended || "-"}
+                      {(marks as any)?.attendance.totalClassesAttended}
                     </Text>
                     <Text style={[styles.text, styles.tableCell]}>
                       {(
@@ -339,7 +339,7 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
                 maxHeight: "50px",
               }}
             >
-              <Image src="/logorv.png" />
+              <Text style={styles.text}> Sd/- </Text>{" "}
             </View>
             <Text style={styles.text}>HOD </Text>{" "}
           </View>
@@ -354,11 +354,11 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
             {" "}
             <View
               style={{
-                maxWidth: "50px",
-                maxHeight: "50px",
+                maxWidth: "70px",
+                maxHeight: "70px",
               }}
             >
-              <Image src="/logorv.png" />
+              <Image src="/principal.jpg" />
             </View>
             <Text style={styles.text}>Principal</Text>
           </View>
