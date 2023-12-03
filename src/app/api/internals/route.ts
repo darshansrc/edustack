@@ -177,5 +177,8 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ StudentData, subjectData }, { status: 200 });
+  return NextResponse.json(
+    { StudentData, subjectData, branch },
+    { status: 200 }
+  );
 }

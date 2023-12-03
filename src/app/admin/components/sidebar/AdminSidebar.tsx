@@ -37,7 +37,7 @@ const AdminSidebar = () => {
     }
   };
 
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   useEffect(() => {
     if (

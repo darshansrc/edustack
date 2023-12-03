@@ -1,6 +1,19 @@
 "use client";
-import { useState, useEffect } from "react";
-import { Tabs, Table, Spin, message, Button, Skeleton } from "antd";
+import { useState, useEffect, useRef } from "react";
+import {
+  Tabs,
+  Table,
+  Spin,
+  message,
+  Button,
+  Skeleton,
+  Breadcrumb,
+  Input,
+  InputRef,
+  Space,
+  Modal,
+} from "antd";
+
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import ReactPDF, { BlobProvider, pdf, usePDF } from "@react-pdf/renderer";
@@ -11,10 +24,28 @@ import ReactDOM from "react-dom";
 import test from "node:test";
 import emailjs from "emailjs-com";
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
-import { DownloadOutlined, SendOutlined } from "@ant-design/icons";
+import Highlighter from "react-highlight-words";
+import {
+  DownloadOutlined,
+  SendOutlined,
+  SettingOutlined,
+  PlusOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import { HiOutlineMail } from "react-icons/hi";
+import { BsPlus } from "react-icons/bs";
+import { ColumnType, FilterConfirmProps } from "antd/es/table/interface";
+import ReportSettings from "../components/ReportSettings";
 
 const { TabPane } = Tabs;
+
+interface DataType {
+  key: string;
+  name: string;
+  usn: number;
+}
+
+type DataIndex = keyof DataType;
 
 const StudentList = ({ params }: { params: { slug: string } }) => {
   const [studentData, setStudentData] = useState([]);
@@ -24,8 +55,149 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
   const [activeTab, setActiveTab] = useState("");
 
   const [isEmailSending, setIsEmailSending] = useState(false);
+  const [isReportGenerating, setIsReportGenerating] = useState(false);
 
   const [messageApi, contextHolder] = message.useMessage();
+
+  const [searchText, setSearchText] = useState("");
+  const [searchedColumn, setSearchedColumn] = useState("");
+  const searchInput = useRef<InputRef>(null);
+  const [branch, setBranch] = useState("");
+  const [settingsModalVisible, setSettingsModalVisible] = useState(false);
+
+  const storage = getStorage(); // Initialize Firebase Storage
+  const SignStorageRef = ref(storage, "signature");
+  const [principalPhotoUrl, setPrincipalPhotoUrl] = useState<string>("");
+  const [branchPhotoUrl, setBranchPhotoUrl] = useState<string>("");
+
+  useEffect(() => {
+    const fetchPrincipalSignature = async () => {
+      try {
+        const url = await getDownloadURL(
+          ref(storage, `signature/principal-ISE.jpg`)
+        );
+        setPrincipalPhotoUrl(url);
+      } catch (error) {
+        console.log(error);
+      }
+
+      try {
+        const url = await getDownloadURL(
+          ref(storage, `signature/branch-ISE.jpg`)
+        );
+        setBranchPhotoUrl(url);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchPrincipalSignature();
+  }, [studentData]);
+
+  const handleSearch = (
+    selectedKeys: string[],
+    confirm: (param?: FilterConfirmProps) => void,
+    dataIndex: DataIndex
+  ) => {
+    confirm();
+    setSearchText(selectedKeys[0]);
+    setSearchedColumn(dataIndex);
+  };
+
+  const handleReset = (clearFilters: () => void) => {
+    clearFilters();
+    setSearchText("");
+  };
+
+  const getColumnSearchProps = (
+    dataIndex: DataIndex
+  ): ColumnType<DataType> => ({
+    filterDropdown: ({
+      setSelectedKeys,
+      selectedKeys,
+      confirm,
+      clearFilters,
+      close,
+    }) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <Input
+          ref={searchInput}
+          placeholder={`Search `}
+          value={selectedKeys[0]}
+          onChange={(e) =>
+            setSelectedKeys(e.target.value ? [e.target.value] : [])
+          }
+          onPressEnter={() =>
+            handleSearch(selectedKeys as string[], confirm, dataIndex)
+          }
+          style={{ marginBottom: 8, display: "block" }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() =>
+              handleSearch(selectedKeys as string[], confirm, dataIndex)
+            }
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Search
+          </Button>
+          <Button
+            onClick={() => clearFilters && handleReset(clearFilters)}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Reset
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              confirm({ closeDropdown: false });
+              setSearchText((selectedKeys as string[])[0]);
+              setSearchedColumn(dataIndex);
+            }}
+          >
+            Filter
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              close();
+            }}
+          >
+            close
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? "#1677ff" : undefined }} />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex]
+        .toString()
+        .toLowerCase()
+        .includes((value as string).toLowerCase()),
+    onFilterDropdownOpenChange: (visible) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100);
+      }
+    },
+    render: (text) =>
+      searchedColumn === dataIndex ? (
+        <Highlighter
+          highlightStyle={{ backgroundColor: "#ffc069", padding: 0 }}
+          searchWords={[searchText]}
+          autoEscape
+          textToHighlight={text ? text.toString() : ""}
+        />
+      ) : (
+        text
+      ),
+  });
 
   useEffect(() => {
     setActiveTab("CIE-1");
@@ -50,6 +222,7 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
           setStudentData(data.StudentData);
           setSubjectData(data.subjectData);
           setDataFetched(true);
+          setBranch(data.branch);
         }
 
         if (!res.ok) {
@@ -144,46 +317,68 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
       title: "Name",
       dataIndex: "name",
       key: "name",
-      width: 200,
+      width: 250,
+
       render: (text, record) => {
         return <div className="min-w-[250px]">{record.name}</div>;
       },
+      ...getColumnSearchProps("name"),
     },
-    { title: "USN", dataIndex: "usn", key: "usn", width: 100 },
-    { title: "Email", dataIndex: "email", key: "email", width: 120 },
+    {
+      title: "USN",
+      dataIndex: "usn",
+      key: "usn",
+      width: 100,
+      ...getColumnSearchProps("usn"),
+    },
+    { title: "Email", dataIndex: "email", key: "email", width: 140 },
     {
       title: "Download Report",
       dataIndex: "downloadReport",
       key: "downloadReport",
       width: 200,
       render: (_, record) => (
-        <PDFDownloadLink
-          document={<ReportDocument studentData={[record]} />}
-          fileName={`StudentReport_${record.usn}.pdf`}
+        <Button
+          type="link"
+          size="small"
+          icon={<DownloadOutlined />}
+          onClick={() => handleDownloadReport(record)}
         >
-          {({ blob, url, loading, error }) => (
-            <Button
-              type="link"
-              size="small"
-              icon={<DownloadOutlined />}
-              loading={!isEmailSending && loading}
-            >
-              Download Report
-            </Button>
-          )}
-        </PDFDownloadLink>
+          Download Report
+        </Button>
       ),
     },
   ];
 
   const columns = [...staticColumns, ...generateColumns()];
 
+  const handleDownloadReport = async (student) => {
+    const blob = await pdf(
+      <ReportDocument
+        studentData={[student]}
+        branchPhotoUrl={branchPhotoUrl}
+        principalPhotoUrl={principalPhotoUrl}
+      />
+    ).toBlob();
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `StudentReport_${student.usn}.pdf`;
+    link.click();
+    URL.revokeObjectURL(link.href); // Clean up the URL.createObjectURL
+  };
+
   const handleDownloadAllReports = async () => {
+    setIsReportGenerating(true);
     const zip = new JSZip();
 
     for (const student of studentData) {
       const blob = await pdf(
-        <ReportDocument studentData={[student]} />
+        <ReportDocument
+          studentData={[student]}
+          branchPhotoUrl={branchPhotoUrl}
+          principalPhotoUrl={principalPhotoUrl}
+        />
       ).toBlob();
       zip.file(`StudentReport_${activeTab}_${student.usn}.pdf`, blob);
     }
@@ -194,6 +389,7 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
       link.download = "AllStudentReports.zip";
       link.click();
     });
+    setIsReportGenerating(false);
   };
 
   function base64ToArrayBuffer(base64) {
@@ -209,7 +405,11 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
     setIsEmailSending(true);
     for (const student of studentData) {
       const pdfBlob = await pdf(
-        <ReportDocument studentData={[student]} />
+        <ReportDocument
+          studentData={[student]}
+          branchPhotoUrl={branchPhotoUrl}
+          principalPhotoUrl={principalPhotoUrl}
+        />
       ).toBlob();
       const base64Pdf = await blobToBase64(pdfBlob);
 
@@ -296,49 +496,86 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
   };
 
   return (
-    <div className="max-w-full px-4 overflow-x-auto overflow-y-auto">
-      <Tabs activeKey={activeTab} onChange={handleTabChange}>
-        <TabPane tab="CIE 1" key="CIE-1" />
-        <TabPane tab="CIE 2" key="CIE-2" />
-        <TabPane tab="CIE 3" key="CIE-3" />
-      </Tabs>
-
-      {dataFetched ? (
-        <>
-          <div className="flex justify-end gap-2  py-4">
+    <>
+      <div className="max-w-full px-4 overflow-x-auto overflow-y-auto">
+        <div className="flex justify-between gap-2  py-4">
+          <Breadcrumb>
+            <Breadcrumb.Item>{params.slug}</Breadcrumb.Item>
+            <Breadcrumb.Item>Internals</Breadcrumb.Item>
+          </Breadcrumb>
+          <div className="flex justify-end gap-2">
             <Button
-              onClick={() => handleDownloadAllReports()}
-              icon={<DownloadOutlined />}
+              onClick={() => setSettingsModalVisible(true)}
+              icon={<SettingOutlined />}
+              type="dashed"
             >
-              Download All Reports
+              Progress Report Settings
             </Button>
             <Button
               type="primary"
-              onClick={handleSendEmails}
-              icon={<SendOutlined />}
+              icon={<PlusOutlined />}
               loading={isEmailSending}
             >
-              Send Email
+              Create New Test
             </Button>
           </div>
-          <div className=" w-[calc(100vw-312px)] border border-gray-200 rounded flex items-center justify-center flex-row overflow-x-auto overflow-y-auto">
-            <Table
-              dataSource={studentData}
-              columns={columns}
-              size="small"
-              rowKey="id"
-              pagination={{ pageSize: 10 }}
-              className="-z-1"
-              scroll={{ x: "80vw" }}
-            />
-          </div>
-        </>
-      ) : (
-        <div className="border rounded mt-20 border-gray-200">
-          <Skeleton active className="w-full p-10 max-w-[calc(100%-200px)]" />
         </div>
-      )}
-    </div>
+        <Tabs activeKey={activeTab} onChange={handleTabChange}>
+          <TabPane tab="CIE 1" key="CIE-1" />
+          <TabPane tab="CIE 2" key="CIE-2" />
+          <TabPane tab="CIE 3" key="CIE-3" />
+        </Tabs>
+
+        {true ? (
+          <>
+            <div className="flex justify-end gap-2  py-4">
+              <Button
+                onClick={() => handleDownloadAllReports()}
+                icon={<DownloadOutlined />}
+                loading={isReportGenerating}
+              >
+                {isReportGenerating ? "Preparing..." : "Download All Reports"}
+              </Button>
+              <Button
+                type="primary"
+                onClick={handleSendEmails}
+                icon={<SendOutlined />}
+                loading={isEmailSending}
+              >
+                Send Email
+              </Button>
+            </div>
+            <div className=" w-[calc(100vw-312px)] border border-gray-200 rounded flex items-center justify-center flex-row overflow-x-auto overflow-y-auto">
+              <Table
+                dataSource={studentData}
+                columns={columns}
+                size="small"
+                rowKey="id"
+                pagination={{ pageSize: 10 }}
+                className="-z-1"
+                scroll={{ x: "80vw" }}
+                bordered
+                loading={!dataFetched}
+                tableLayout="fixed"
+              />
+            </div>
+          </>
+        ) : (
+          <div className="border rounded mt-20 border-gray-200">
+            <Skeleton active className="w-full p-10 max-w-[calc(100%-200px)]" />
+          </div>
+        )}
+      </div>
+
+      <Modal
+        open={settingsModalVisible}
+        onCancel={() => setSettingsModalVisible(false)}
+        footer={null}
+        title="Progress Report Settings"
+      >
+        <ReportSettings branch={branch} />
+      </Modal>
+    </>
   );
 };
 

@@ -1,4 +1,5 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import {
   Page,
   Text,
@@ -9,6 +10,7 @@ import {
   Font,
 } from "@react-pdf/renderer";
 import RomanNumerals from "roman-numerals";
+import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 
 interface Student {
   id: string;
@@ -33,6 +35,8 @@ interface Student {
 
 interface ReportDocumentProps {
   studentData: Student[];
+  principalPhotoUrl?: string;
+  branchPhotoUrl?: string;
 }
 
 Font.register({
@@ -116,8 +120,59 @@ const styles = StyleSheet.create({
   },
 });
 
-const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
+const ReportDocument: React.FC<ReportDocumentProps> = ({
+  studentData,
+  principalPhotoUrl,
+  branchPhotoUrl,
+}) => {
+  const storage = getStorage(); // Initialize Firebase Storage
+  const [principalPhotoBase64, setPrincipalPhotoBase64] = useState<string>("");
+  const [branchPhotoBase64, setBranchPhotoBase64] = useState<string>("");
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const principalUrl = await getDownloadURL(
+          ref(storage, `signature/principal-ISE.jpg`)
+        );
+
+        const responsePrincipal = await fetch(principalUrl);
+        const blobPrincipal = await responsePrincipal.blob();
+        const readerPrincipal = new FileReader();
+
+        readerPrincipal.onload = () => {
+          setPrincipalPhotoBase64(readerPrincipal.result as string);
+        };
+
+        readerPrincipal.readAsDataURL(blobPrincipal);
+      } catch (error) {
+        console.log(error);
+      }
+
+      try {
+        const branchUrl = await getDownloadURL(
+          ref(storage, `signature/branch-ISE.jpg`)
+        );
+
+        const responseBranch = await fetch(branchUrl);
+        const blobBranch = await responseBranch.blob();
+        const readerBranch = new FileReader();
+
+        readerBranch.onload = () => {
+          setBranchPhotoBase64(readerBranch.result as string);
+        };
+
+        readerBranch.readAsDataURL(blobBranch);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchImages();
+  }, [studentData, storage]);
   const semesterToRoman = (semester) => {
+    console.log("nig" + principalPhotoUrl);
+    console.log("nig" + branchPhotoUrl);
     const num = parseInt(semester, 10);
     if (isNaN(num) || num <= 0 || num > 3999) {
       // Handle invalid input
@@ -127,6 +182,8 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
     return RomanNumerals.toRoman(num);
   };
 
+  console.log("ng" + principalPhotoUrl);
+  console.log("ng" + branchPhotoUrl);
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -363,7 +420,7 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
                 maxHeight: "50px",
               }}
             >
-              <Text style={styles.text}> Sd/- </Text>{" "}
+              <Image src={branchPhotoUrl} />
             </View>
             <Text style={styles.text}>HOD </Text>{" "}
           </View>
@@ -382,7 +439,7 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
                 maxHeight: "70px",
               }}
             >
-              <Image src="/principal.jpg" />
+              <Image src={principalPhotoUrl} />
             </View>
             <Text style={styles.text}>Principal</Text>
           </View>
