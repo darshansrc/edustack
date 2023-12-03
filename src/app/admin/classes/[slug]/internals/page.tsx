@@ -12,6 +12,7 @@ import {
   InputRef,
   Space,
   Modal,
+  Tag,
 } from "antd";
 
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
@@ -353,6 +354,25 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
         </Button>
       ),
     },
+    {
+      title: "Email Status",
+      dataIndex: "emailStatus",
+      key: "emailStatus",
+      width: 150,
+      render: (status) => (
+        <Tag
+          color={
+            status === "sent"
+              ? "green"
+              : status === "sending"
+              ? "yellow"
+              : "red"
+          }
+        >
+          {status}
+        </Tag>
+      ),
+    },
   ];
 
   const columns = [...staticColumns, ...generateColumns()];
@@ -410,6 +430,8 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
     setIsEmailSending(true);
     setEmailProgress(0);
     setFailedEmails([]);
+    const updatedStudentData = [...studentData]; // Create a copy of the studentData array
+
     const studentEntries = Array.from(studentData.entries());
     for (const [index, student] of studentEntries) {
       const pdfBlob = await pdf(
@@ -420,25 +442,8 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
         />
       ).toBlob();
       const base64Pdf = await blobToBase64(pdfBlob);
+
       try {
-        // const storage = getStorage();
-        // const ReportStorageRef = ref(storage, "progress-report");
-        // const ReportRef = ref(ReportStorageRef, `${student.fatherEmail}.pdf`);
-
-        // // Convert base64 to Uint8Array
-        // const arrayBuffer = base64ToArrayBuffer(base64Pdf);
-        // const uint8Array = new Uint8Array(arrayBuffer);
-
-        // try {
-        //   // Upload Uint8Array to Google Cloud Storage
-        //   await uploadBytes(ReportRef, uint8Array);
-        // } catch (error) {
-        //   console.error("Error uploading the file:", error);
-        // }
-
-        // const url = await getDownloadURL(
-        //   ref(storage, `progress-report/${student.fatherEmail}.pdf`)
-        // );
         const key = student.name;
         message.loading({
           key,
@@ -466,6 +471,8 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
             content: "Progress report sent successfully for " + student.name,
             duration: 2,
           });
+          // Update the email status to "sent" in the updatedStudentData array
+          updatedStudentData[index].emailStatus = "sent";
         }
 
         if (!response.ok) {
@@ -475,21 +482,25 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
             content: "Failed to send Progress report for " + student.name,
             duration: 2,
           });
+          // Update the email status to "failed" in the updatedStudentData array
+          updatedStudentData[index].emailStatus = "failed";
         }
       } catch (error) {
         console.error(error);
       }
 
-      const progress = ((index + 1) / studentData.length) * 100;
+      const progress = ((index + 1) / updatedStudentData.length) * 100;
       setEmailProgress(progress);
     }
 
     setIsEmailSending(false);
+    setStudentData(updatedStudentData); // Update the state with the modified studentData array
     message.success({
       content: "Emails sent successfully",
       duration: 5,
     });
   };
+
   const blobToBase64 = (blob) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -502,6 +513,33 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
       reader.readAsDataURL(blob);
     });
   };
+
+  const EmailColumns = [
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: "Email Status",
+      dataIndex: "emailStatus",
+      key: "emailStatus",
+      width: 150,
+      render: (status) => (
+        <Tag
+          color={
+            status === "sent"
+              ? "green"
+              : status === "sending"
+              ? "yellow"
+              : "red"
+          }
+        >
+          {status}
+        </Tag>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -589,22 +627,22 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
 
       <Modal
         title="Sending Emails"
-        visible={emailModalVisible}
+        open={false}
         onCancel={() => setEmailModalVisible(false)}
         footer={null}
       >
         <Progress percent={emailProgress} status="active" />
 
-        {failedEmails.length > 0 && (
-          <>
-            <h3>Emails failed to send:</h3>
-            <ul>
-              {failedEmails.map((email, index) => (
-                <li key={index}>{email}</li>
-              ))}
-            </ul>
-          </>
-        )}
+        <Table
+          dataSource={studentData}
+          columns={EmailColumns}
+          size="small"
+          rowKey="id"
+          pagination={{ pageSize: 10 }}
+          className="-z-1"
+          scroll={{ x: "80vw" }}
+          bordered
+        />
       </Modal>
     </>
   );
