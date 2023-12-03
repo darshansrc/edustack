@@ -202,7 +202,7 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
               <View style={styles.tableRow}>
                 <Text
                   style={{
-                    width: "30px",
+                    width: "25px",
                     fontSize: 10,
                     margin: 0,
                     padding: 5,
@@ -214,7 +214,7 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
                 </Text>
                 <Text
                   style={{
-                    width: "200px",
+                    width: "110px",
                     fontSize: 10,
                     margin: 0,
                     padding: 5,
@@ -228,9 +228,11 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
                   Classes {"\n"} Held
                 </Text>
                 <Text style={[styles.text, styles.tableCell]}>
-                  Classes {"\n"} Attd.
+                  Classes {"\n"} Attended.
                 </Text>
-                <Text style={[styles.text, styles.tableCell]}>Att. %</Text>
+                <Text style={[styles.text, styles.tableCell]}>
+                  Attendance {"\n"} %
+                </Text>
                 <Text style={[styles.text, styles.tableCell]}>
                   Test{"\n"}Marks
                 </Text>
@@ -238,7 +240,7 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
                   Max{"\n"}Marks
                 </Text>
                 <Text style={[styles.text, styles.tableCell]}>
-                  Quiz or{"\n"}Assgnm{"\n"} Marks
+                  Assignment {"\n"} / Quiz Marks
                 </Text>
                 <Text style={[styles.text, styles.tableCell]}>
                   Max{"\n"}Marks
@@ -255,7 +257,7 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
                   >
                     <Text
                       style={{
-                        width: "30px",
+                        width: "25px",
                         fontSize: 10,
                         margin: 0,
                         padding: 5,
@@ -267,7 +269,7 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
                     </Text>
                     <Text
                       style={{
-                        width: "200px",
+                        width: "110px",
                         fontSize: 10,
                         margin: 0,
                         padding: 5,
@@ -279,22 +281,25 @@ const ReportDocument: React.FC<ReportDocumentProps> = ({ studentData }) => {
                         borderTop: "1px solid #000",
                       }}
                     >
-                      {(marks as any)?.subjectName || "-"} {"\n"}
-                      {subjectCode || "-"}
+                      {(marks as any)?.subjectName || "-"} ( {"\n"}{" "}
+                      {subjectCode || "-"} )
                     </Text>
                     <Text style={[styles.text, styles.tableCell]}>
                       {(marks as any)?.attendance.totalClassesHeld || "-"}
                     </Text>
                     <Text style={[styles.text, styles.tableCell]}>
-                      {(marks as any)?.attendance.totalClassesAttended}
+                      {(marks as any)?.attendance.totalClassesHeld
+                        ? (marks as any)?.attendance.totalClassesAttended
+                        : "-"}
                     </Text>
                     <Text style={[styles.text, styles.tableCell]}>
-                      {(
-                        ((marks as any)?.attendance.totalClassesAttended /
-                          (marks as any)?.attendance.totalClassesHeld) *
-                        100
-                      ).toFixed(0)}
-                      %
+                      {(marks as any)?.attendance.totalClassesHeld
+                        ? (
+                            ((marks as any)?.attendance.totalClassesAttended /
+                              (marks as any)?.attendance.totalClassesHeld) *
+                            100
+                          ).toFixed(0) + "%"
+                        : "-"}
                     </Text>
                     <Text style={[styles.text, styles.tableCell]}>
                       {(marks as any)?.obtainedTestMarks || "-"}

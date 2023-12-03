@@ -329,6 +329,7 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
             dataSource={subjectData}
             size="small"
             className="w-full min-w-full max-w-[calc(100%-200px)]"
+            scroll={{ x: 500 }}
           />
         ) : (
           <Skeleton active className="w-full p-10 max-w-[calc(100%-200px)]" />

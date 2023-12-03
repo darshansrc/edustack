@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Tabs, Table, Spin, message, Button } from "antd";
+import { Tabs, Table, Spin, message, Button, Skeleton } from "antd";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import ReactPDF, { BlobProvider, pdf, usePDF } from "@react-pdf/renderer";
@@ -11,6 +11,8 @@ import ReactDOM from "react-dom";
 import test from "node:test";
 import emailjs from "emailjs-com";
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
+import { DownloadOutlined, SendOutlined } from "@ant-design/icons";
+import { HiOutlineMail } from "react-icons/hi";
 
 const { TabPane } = Tabs;
 
@@ -20,6 +22,10 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
   const [dataFetched, setDataFetched] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState("");
   const [activeTab, setActiveTab] = useState("");
+
+  const [isEmailSending, setIsEmailSending] = useState(false);
+
+  const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
     setActiveTab("CIE-1");
@@ -67,11 +73,13 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
       title: subject.name + " (" + subject.code + ")",
       dataIndex: subject.code,
       key: subject.code,
+      width: 100,
       children: [
         {
           title: "Test",
           dataIndex: `testMarks.${subject.code}.obtainedTestMarks`,
           key: `test_${subject.code}`,
+          width: 100,
           render: (text, record) => {
             const studentMarks = record.testMarks[subject.code];
             return studentMarks ? studentMarks.obtainedTestMarks : "-";
@@ -81,6 +89,7 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
           title: "Assignment",
           dataIndex: `testMarks.${subject.code}.obtainedAssignmentMarks`,
           key: `assignment_${subject.code}`,
+          width: 100,
           render: (text, record) => {
             const studentMarks = record.testMarks[subject.code];
             return studentMarks ? studentMarks.obtainedAssignmentMarks : "-";
@@ -90,6 +99,7 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
           title: "Classes held",
           dataIndex: `testMarks.${subject.code}.attendance.totalClassesHeld`,
           key: `totalClassesHeld_${subject.code}`,
+          width: 100,
           render: (text, record) => {
             const studentMarks = record.testMarks[subject.code];
             return studentMarks
@@ -101,6 +111,7 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
           title: "Classes attended",
           dataIndex: `testMarks.${subject.code}.attendance.totalClassesAttended`,
           key: `totalClassesAttended_${subject.code}`,
+          width: 100,
           render: (text, record) => {
             const studentMarks = record.testMarks[subject.code];
             return studentMarks
@@ -112,9 +123,10 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
           title: "Attendance Percentage",
           dataIndex: `testMarks.${subject.code}.attendance.totalClassesAttended`,
           key: `attendance_${subject.code}`,
+          width: 100,
           render: (text, record) => {
             const studentMarks = record.testMarks[subject.code];
-            return studentMarks
+            return studentMarks.attendance.totalClassesHeld
               ? `${(
                   (studentMarks.attendance.totalClassesAttended /
                     studentMarks.attendance.totalClassesHeld) *
@@ -128,21 +140,37 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
   };
 
   const staticColumns = [
-    { title: "Name", dataIndex: "name", key: "name" },
-    { title: "USN", dataIndex: "usn", key: "usn" },
-    { title: "Email", dataIndex: "email", key: "email" },
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+      width: 200,
+      render: (text, record) => {
+        return <div className="min-w-[250px]">{record.name}</div>;
+      },
+    },
+    { title: "USN", dataIndex: "usn", key: "usn", width: 100 },
+    { title: "Email", dataIndex: "email", key: "email", width: 120 },
     {
       title: "Download Report",
       dataIndex: "downloadReport",
       key: "downloadReport",
+      width: 200,
       render: (_, record) => (
         <PDFDownloadLink
           document={<ReportDocument studentData={[record]} />}
           fileName={`StudentReport_${record.usn}.pdf`}
         >
-          {({ blob, url, loading, error }) =>
-            loading ? "Generating Report..." : "Download Report"
-          }
+          {({ blob, url, loading, error }) => (
+            <Button
+              type="link"
+              size="small"
+              icon={<DownloadOutlined />}
+              loading={!isEmailSending && loading}
+            >
+              Download Report
+            </Button>
+          )}
         </PDFDownloadLink>
       ),
     },
@@ -178,6 +206,7 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
   }
 
   const handleSendEmails = async () => {
+    setIsEmailSending(true);
     for (const student of studentData) {
       const pdfBlob = await pdf(
         <ReportDocument studentData={[student]} />
@@ -203,6 +232,11 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
         // const url = await getDownloadURL(
         //   ref(storage, `progress-report/${student.fatherEmail}.pdf`)
         // );
+        const key = student.name;
+        message.loading({
+          key,
+          content: `Sending Progress report for ${student.name}...`,
+        });
 
         const response = await fetch("/api/email", {
           method: "POST",
@@ -220,13 +254,19 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
         });
 
         if (response.ok) {
-          message.success(
-            "Progress report sent successfully for " + student.name
-          );
+          message.success({
+            key,
+            content: "Progress report sent successfully for " + student.name,
+            duration: 2,
+          });
         }
 
         if (!response.ok) {
-          message.error("Error sending email for " + student.name);
+          message.error({
+            key,
+            content: "Failed to sned Progress report for " + student.name,
+            duration: 2,
+          });
           throw new Error("Error sending email");
         }
 
@@ -235,6 +275,11 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
         console.error(error);
       }
     }
+    setIsEmailSending(false);
+    message.success({
+      content: "Emails sent successfully",
+      duration: 5,
+    });
   };
 
   const blobToBase64 = (blob) => {
@@ -251,27 +296,46 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
   };
 
   return (
-    <div>
+    <div className="max-w-full px-4 overflow-x-auto overflow-y-auto">
       <Tabs activeKey={activeTab} onChange={handleTabChange}>
         <TabPane tab="CIE 1" key="CIE-1" />
         <TabPane tab="CIE 2" key="CIE-2" />
         <TabPane tab="CIE 3" key="CIE-3" />
       </Tabs>
-      <Button onClick={() => handleDownloadAllReports()}>
-        Download All Reports
-      </Button>
-      <Button onClick={handleSendEmails}>Send Emails</Button>
+
       {dataFetched ? (
-        <Table
-          dataSource={studentData}
-          columns={columns}
-          size="small"
-          rowKey="id"
-          pagination={{ pageSize: 10 }}
-        />
+        <>
+          <div className="flex justify-end gap-2  py-4">
+            <Button
+              onClick={() => handleDownloadAllReports()}
+              icon={<DownloadOutlined />}
+            >
+              Download All Reports
+            </Button>
+            <Button
+              type="primary"
+              onClick={handleSendEmails}
+              icon={<SendOutlined />}
+              loading={isEmailSending}
+            >
+              Send Email
+            </Button>
+          </div>
+          <div className=" w-[calc(100vw-312px)] border border-gray-200 rounded flex items-center justify-center flex-row overflow-x-auto overflow-y-auto">
+            <Table
+              dataSource={studentData}
+              columns={columns}
+              size="small"
+              rowKey="id"
+              pagination={{ pageSize: 10 }}
+              className="-z-1"
+              scroll={{ x: "80vw" }}
+            />
+          </div>
+        </>
       ) : (
-        <div className="w-full flex flex-row items-center justify-center h-48">
-          <Spin tip="Loading..." />
+        <div className="border rounded mt-20 border-gray-200">
+          <Skeleton active className="w-full p-10 max-w-[calc(100%-200px)]" />
         </div>
       )}
     </div>
