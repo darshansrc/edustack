@@ -1,44 +1,50 @@
-import sgMail from "@sendgrid/mail";
+import nodemailer from "nodemailer";
 import { NextRequest, NextResponse } from "next/server";
-
-sgMail.setApiKey(
-  "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"
-);
 
 export async function POST(request: NextRequest) {
   const res = await request.json();
 
   const { to, from, subject, text, attachment } = res;
 
-  const msg = {
-    to,
+  // Create a nodemailer transporter with your SMTP server details
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false, // Set to true if using SSL/TLS
+    auth: {
+      user: "rvitm@edu-stack.com",
+      pass: "102435t0qu5",
+    },
+  });
+
+  // Create the email message
+  const mailOptions = {
     from,
+    to,
     subject,
     text,
     attachments: [
       {
         content: attachment,
         filename: "report.pdf",
-        type: "application/pdf",
-        disposition: "attachment",
+        encoding: "base64", // Ensure the correct encoding for your attachment
       },
     ],
   };
 
   try {
-    await sgMail.send(msg);
+    // Send the email
+    await transporter.sendMail(mailOptions);
+
     console.log("Email sent");
     return NextResponse.json(
-      { message: "message sent successfully ! " },
+      { message: "Message sent successfully!" },
       { status: 200 }
     );
   } catch (error) {
     console.error(error);
-    if (error.response) {
-      console.error(error.response.body);
-    }
     return NextResponse.json(
-      { message: "failed to send email " },
+      { message: "Failed to send email." },
       { status: 500 }
     );
   }

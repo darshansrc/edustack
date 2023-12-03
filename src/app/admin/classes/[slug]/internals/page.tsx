@@ -24,6 +24,7 @@ import ReactDOM from "react-dom";
 import test from "node:test";
 import emailjs from "emailjs-com";
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
+import { Progress } from "antd";
 import Highlighter from "react-highlight-words";
 import {
   DownloadOutlined,
@@ -56,6 +57,10 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
 
   const [isEmailSending, setIsEmailSending] = useState(false);
   const [isReportGenerating, setIsReportGenerating] = useState(false);
+
+  const [emailModalVisible, setEmailModalVisible] = useState(false);
+  const [emailProgress, setEmailProgress] = useState(0);
+  const [failedEmails, setFailedEmails] = useState<string[]>([]);
 
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -403,7 +408,10 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
 
   const handleSendEmails = async () => {
     setIsEmailSending(true);
-    for (const student of studentData) {
+    setEmailProgress(0);
+    setFailedEmails([]);
+    const studentEntries = Array.from(studentData.entries());
+    for (const [index, student] of studentEntries) {
       const pdfBlob = await pdf(
         <ReportDocument
           studentData={[student]}
@@ -412,7 +420,6 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
         />
       ).toBlob();
       const base64Pdf = await blobToBase64(pdfBlob);
-
       try {
         // const storage = getStorage();
         // const ReportStorageRef = ref(storage, "progress-report");
@@ -462,26 +469,27 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
         }
 
         if (!response.ok) {
+          setFailedEmails((prev) => [...prev, student.fatherEmail]);
           message.error({
             key,
-            content: "Failed to sned Progress report for " + student.name,
+            content: "Failed to send Progress report for " + student.name,
             duration: 2,
           });
-          throw new Error("Error sending email");
         }
-
-        console.log("Email sent");
       } catch (error) {
         console.error(error);
       }
+
+      const progress = ((index + 1) / studentData.length) * 100;
+      setEmailProgress(progress);
     }
+
     setIsEmailSending(false);
     message.success({
       content: "Emails sent successfully",
       duration: 5,
     });
   };
-
   const blobToBase64 = (blob) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -538,7 +546,10 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
               </Button>
               <Button
                 type="primary"
-                onClick={handleSendEmails}
+                onClick={() => {
+                  setEmailModalVisible(true); // Open the progress modal
+                  handleSendEmails(); // Call the function to send emails
+                }}
                 icon={<SendOutlined />}
                 loading={isEmailSending}
               >
@@ -574,6 +585,26 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
         title="Progress Report Settings"
       >
         <ReportSettings branch={branch} />
+      </Modal>
+
+      <Modal
+        title="Sending Emails"
+        visible={emailModalVisible}
+        onCancel={() => setEmailModalVisible(false)}
+        footer={null}
+      >
+        <Progress percent={emailProgress} status="active" />
+
+        {failedEmails.length > 0 && (
+          <>
+            <h3>Emails failed to send:</h3>
+            <ul>
+              {failedEmails.map((email, index) => (
+                <li key={index}>{email}</li>
+              ))}
+            </ul>
+          </>
+        )}
       </Modal>
     </>
   );
