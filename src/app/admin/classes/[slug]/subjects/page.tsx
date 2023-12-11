@@ -33,6 +33,8 @@ interface SubjectData {
   name: string;
   semester: string;
   theoryLab: string;
+  credits: number;
+  electiveStudents: string[]; // Add this line
 }
 
 const ManageSubjects = ({ params }: { params: { slug: string } }) => {
@@ -96,11 +98,24 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
 
   const showModal = (subject?: SubjectData) => {
     setEditingSubject(subject || null);
+
+    // Set initial form values
     form.setFieldsValue(subject || {});
+
+    // Check if the subject is elective and has elective students
+    if (
+      subject?.compulsoryElective === "elective" &&
+      subject?.electiveStudents
+    ) {
+      // Set the initial value of the students field in the form
+      form.setFieldsValue({ students: subject.electiveStudents });
+    }
+
+    // Show the modal for selecting elective students if needed
     if (subject?.compulsoryElective === "elective") {
-      // Show the modal for selecting elective students
       setIsSubjectElective(true);
     }
+
     setIsModalVisible(true);
   };
 
@@ -113,6 +128,36 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
 
   const onFinish = async (values: any) => {
     try {
+      // If the subject is elective, check if elective students are selected
+      if (
+        isSubjectElective &&
+        values.compulsoryElective === "elective" &&
+        !values.students
+      ) {
+        messageApi.error("Please select students for this elective subject!");
+        return;
+      }
+
+      // Prepare subject data to add or update
+      const subjectDataToAddOrUpdate = {
+        ...values,
+        semester: selectedSemester,
+      };
+
+      // If credits field is provided, add it to the subject data
+      if (values.credits !== undefined) {
+        subjectDataToAddOrUpdate.credits = values.credits;
+      }
+
+      // Update electiveStudents based on the selected students in the form
+      if (isSubjectElective && values.students) {
+        const selectedStudentUSNs = values.students.map(
+          (student: string) => student
+        );
+        setElectiveStudents(selectedStudentUSNs);
+        subjectDataToAddOrUpdate.electiveStudents = selectedStudentUSNs;
+      }
+
       if (editingSubject) {
         // Edit existing subject
         const subjectDocRef = doc(
@@ -122,16 +167,15 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
           "subjects",
           editingSubject.id
         );
-        await setDoc(subjectDocRef, {
-          ...values,
-          semester: selectedSemester,
-          ...(electiveStudents && { electiveStudents }),
-        });
+        await setDoc(subjectDocRef, subjectDataToAddOrUpdate);
+
         messageApi.success("Subject updated successfully!");
+
+        // Update the subject data in the state
         setSubjectData((prevSubjectData) =>
           prevSubjectData.map((subject) =>
             subject.id === editingSubject.id
-              ? { ...subject, ...values }
+              ? { ...subject, ...subjectDataToAddOrUpdate }
               : subject
           )
         );
@@ -139,17 +183,22 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
         // Add new subject
         const docRef = await setDoc(
           doc(db, "database", params.slug, "subjects", values.code),
-          {
-            ...values,
-            semester: selectedSemester,
-            ...(electiveStudents && { electiveStudents }),
-          }
+          subjectDataToAddOrUpdate
         );
+
         messageApi.success("Subject added successfully!");
-        const newSubject: SubjectData = { id: values.code, ...values };
+
+        // Create a new subject object
+        const newSubject: SubjectData = {
+          id: values.code,
+          ...subjectDataToAddOrUpdate,
+        };
+
+        // Update the subject data in the state
         setSubjectData((prevSubjectData) => [...prevSubjectData, newSubject]);
       }
 
+      // Reset form and close the modal
       form.resetFields();
       setEditingSubject(null);
       setIsModalVisible(false);
@@ -187,6 +236,8 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
             name: doc.data().name,
             semester: doc.data().semester,
             theoryLab: doc.data().theoryLab,
+            credits: doc.data().credits,
+            electiveStudents: doc.data().electiveStudents,
           }))
           .filter(
             (subject) => subject.semester.toString() === selectedSemester
@@ -204,17 +255,24 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
 
   const columns = [
     {
-      title: "Code",
+      title: "Subject Code",
       dataIndex: "code",
       key: "code",
       width: 100,
       className: "text-[12px]",
     },
     {
-      title: "Name",
+      title: "Subject Name",
       dataIndex: "name",
       key: "name",
       width: 150,
+      className: "text-[12px]",
+    },
+    {
+      title: "Course Credits",
+      dataIndex: "credits",
+      key: "credits",
+      width: 100,
       className: "text-[12px]",
     },
     {
@@ -233,7 +291,7 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
       className: "text-[12px]",
     },
     {
-      title: "Faculties",
+      title: "Faculties Handling",
       dataIndex: "faculties",
       key: "faculties",
       width: 100,
@@ -356,7 +414,7 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
       >
         <Form form={form} onFinish={onFinish} layout="vertical">
           <Form.Item
-            label="Code"
+            label="Subject Code"
             name="code"
             className="mt-6"
             rules={[
@@ -371,6 +429,32 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
               placeholder="Enter subject code"
             />
           </Form.Item>
+
+          <Form.Item
+            label="Subject Name"
+            name="name"
+            rules={[
+              { required: true, message: "Please enter the subject name!" },
+            ]}
+          >
+            <Input placeholder="Enter subject name" />
+          </Form.Item>
+
+          <Form.Item
+            label="Number of Credits"
+            name="credits"
+            rules={
+              [
+                // {
+                //   required: true,
+                //   message: "Please enter the number of credits!",
+                // },
+              ]
+            }
+          >
+            <Input type="number" placeholder="Enter the number of credits" />
+          </Form.Item>
+
           <Form.Item
             label="Compulsory/Elective"
             name="compulsoryElective"
@@ -417,7 +501,7 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
               </Select>
             </Form.Item>
           )}
-          <Form.Item label="Faculties" name="faculties">
+          <Form.Item label="Faculties Handling" name="faculties">
             <Select mode="multiple" placeholder="Select faculties">
               {/* Add options based on faculty data */}
               {facultyData.map((faculty) => (
@@ -426,15 +510,6 @@ const ManageSubjects = ({ params }: { params: { slug: string } }) => {
                 </Select.Option>
               ))}
             </Select>
-          </Form.Item>
-          <Form.Item
-            label="Name"
-            name="name"
-            rules={[
-              { required: true, message: "Please enter the subject name!" },
-            ]}
-          >
-            <Input placeholder="Enter subject name" />
           </Form.Item>
 
           <Form.Item

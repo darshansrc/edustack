@@ -41,6 +41,7 @@ const ManageClassrooms = () => {
     useState<ClassroomData | null>(null);
   const [form] = Form.useForm();
   const [dataFetched, setDataFetched] = useState(false);
+  const [branchName, setBranchName] = useState("");
 
   const showModal = (classroom?: ClassroomData) => {
     setEditingClassroom(classroom || null);
@@ -123,6 +124,7 @@ const ManageClassrooms = () => {
             currentSemester: doc.data().currentSemester,
             year: doc.data().year,
             classroomStatus: doc.data().classroomStatus,
+            branchName: doc.data().branchName,
           }));
         setClassroomData(fetchedClassroomData);
         setDataFetched(true);
@@ -271,6 +273,8 @@ const ManageClassrooms = () => {
               <Select.Option value="">No Section</Select.Option>
               <Select.Option value="A">A</Select.Option>
               <Select.Option value="B">B</Select.Option>
+              <Select.Option value="C">C</Select.Option>
+              <Select.Option value="D">D</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -284,7 +288,7 @@ const ManageClassrooms = () => {
             ]}
           >
             <Select placeholder="Select current semester">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((semester) => (
+              {[1, 2, 3, 4, 5, 6, 7, 8, "Alumni"].map((semester) => (
                 <Select.Option key={semester} value={semester}>
                   {semester}
                 </Select.Option>
@@ -292,7 +296,7 @@ const ManageClassrooms = () => {
             </Select>
           </Form.Item>
           <Form.Item
-            label="Year"
+            label="Year of scheme"
             name="year"
             rules={[
               {
@@ -327,6 +331,9 @@ const ManageClassrooms = () => {
               <Select.Option value="Active">Active</Select.Option>
               <Select.Option value="Inactive">Inactive</Select.Option>
             </Select>
+          </Form.Item>
+          <Form.Item label="Branch Full Name" name="branchName">
+            <Input type="text" name="branchName" />
           </Form.Item>
         </Form>
       </Modal>

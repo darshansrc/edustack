@@ -627,7 +627,7 @@ const StudentList = ({ params }: { params: { slug: string } }) => {
 
       <Modal
         title="Sending Emails"
-        open={false}
+        open={emailModalVisible}
         onCancel={() => setEmailModalVisible(false)}
         footer={null}
       >

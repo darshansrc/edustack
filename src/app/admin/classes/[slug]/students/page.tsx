@@ -46,6 +46,7 @@ interface StudentData {
   motherName?: string;
   motherEmail?: string;
   motherPhone?: string;
+  counsellorEmail?: string;
 }
 
 const ManageStudents = ({ params }: { params: { slug: string } }) => {
@@ -133,6 +134,7 @@ const ManageStudents = ({ params }: { params: { slug: string } }) => {
           motherName: doc.data().motherName,
           motherEmail: doc.data().motherEmail,
           motherPhone: doc.data().motherPhone,
+          counsellorEmail: doc.data().counsellorEmail,
         })
       );
       setStudentData(fetchedStudentData);
@@ -147,7 +149,7 @@ const ManageStudents = ({ params }: { params: { slug: string } }) => {
   }, []);
 
   const validateCsvData = (csvData: any[]) => {
-    const requiredFields = ["name", "usn", "email", "labBatch"];
+    const requiredFields = ["name", "usn", "labBatch"];
 
     for (const row of csvData) {
       // Check if any of the required fields are empty
@@ -160,23 +162,28 @@ const ManageStudents = ({ params }: { params: { slug: string } }) => {
       if (isNaN(labBatchValue) || labBatchValue < 1 || labBatchValue > 3) {
         return false;
       }
+
+      // Check if counsellorEmail is a valid email address
     }
 
     return true;
   };
 
+  const isValidEmail = (email: string) => {
+    // Use a regex pattern for basic email validation
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailPattern.test(email);
+  };
   const processCsvData = (csvData: any[]) => {
     for (const row of csvData) {
-      if (validateIndividualStudent(row)) {
-        handleIndividualStudent(row);
-      }
+      handleIndividualStudent(row);
     }
     antMessage.success("All students added successfully!");
     setUploadCSVModalVisible(false);
   };
 
   const validateIndividualStudent = (values: any) => {
-    const requiredFields = ["name", "usn", "email", "labBatch"];
+    const requiredFields = ["name", "usn", "labBatch"];
 
     return requiredFields.every((field) => values[field]);
   };
@@ -196,6 +203,7 @@ const ManageStudents = ({ params }: { params: { slug: string } }) => {
         motherEmail: values.motherEmail || "",
         motherPhone: values.motherPhone || "",
         labBatch: values.labBatch || "",
+        counsellorEmail: values.counsellorEmail || "",
       };
 
       const studentDocRef = doc(
@@ -210,9 +218,11 @@ const ManageStudents = ({ params }: { params: { slug: string } }) => {
 
       messageApi.success("Student added successfully!");
 
-      const newStudent: StudentData = { id: values.usn, ...values };
+      // const newStudent: StudentData = { id: values.usn, ...values };
 
-      setStudentData((prevStudentData) => [...prevStudentData, newStudent]);
+      // setStudentData((prevStudentData) => [...prevStudentData, newStudent]);
+
+      fetchStudents();
     } catch (error) {
       console.error("Error adding student:", error);
     }
@@ -247,6 +257,27 @@ const ManageStudents = ({ params }: { params: { slug: string } }) => {
       className: "text-[12px]",
       width: 100,
       render: (text: string) => <span>Batch {text}</span>,
+    },
+    {
+      title: "Counsellor's Email",
+      dataIndex: "counsellorEmail",
+      key: "counsellorEmail",
+      className: "text-[12px]",
+      width: 100,
+    },
+    {
+      title: "Parent Name",
+      dataIndex: "fatherName",
+      key: "fatherName",
+      className: "text-[12px]",
+      width: 100,
+    },
+    {
+      title: "Parent Email",
+      dataIndex: "fatherEmail",
+      key: "fatherEmail",
+      className: "text-[12px]",
+      width: 100,
     },
     {
       title: "Action",
@@ -306,6 +337,7 @@ const ManageStudents = ({ params }: { params: { slug: string } }) => {
       if (isValid) {
         processCsvData(csvData);
         antMessage.success("CSV data added successfully!");
+        fetchStudents();
       } else {
         antMessage.error("Invalid CSV file. Please check the format.");
       }
@@ -343,6 +375,57 @@ const ManageStudents = ({ params }: { params: { slug: string } }) => {
     setUploadCSVModalVisible(true);
   };
 
+  const downloadCSV = () => {
+    try {
+      const csvContent = "data:text/csv;charset=utf-8," + studentDataToCSV();
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "classData.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      antMessage.error("Error downloading CSV. Please try again.");
+    }
+  };
+
+  const studentDataToCSV = () => {
+    const csvHeader = [
+      "name",
+      "usn",
+      "email",
+      "labBatch",
+      "counsellorEmail",
+      "phone",
+      "fatherName",
+      "fatherEmail",
+      "fatherPhone",
+      "motherName",
+      "motherEmail",
+      "motherPhone",
+    ].join(",");
+    const csvRows = studentData.map((student) => {
+      const {
+        name,
+        usn,
+        email,
+        labBatch,
+        counsellorEmail,
+        phone,
+        fatherName,
+        fatherEmail,
+        fatherPhone,
+        motherName,
+        motherEmail,
+        motherPhone,
+      } = student;
+
+      return `"${name}","${usn}","${email}","${labBatch}","${counsellorEmail}","${phone}","${fatherName}","${fatherEmail}","${fatherPhone}","${motherName}","${motherEmail}","${motherPhone}"`;
+    });
+
+    return `${csvHeader}\n${csvRows.join("\n")}`;
+  };
   return (
     <div className="flex flex-col items-left mt-8 pl-4 pr-4 max-w-full">
       {contextHolder}
@@ -351,6 +434,9 @@ const ManageStudents = ({ params }: { params: { slug: string } }) => {
           Manage Students
         </p>
         <div className="flex flex-row gap-4 justify-center items-center">
+          <Button icon={<DownloadOutlined />} onClick={downloadCSV}>
+            Download Class Data
+          </Button>
           <Button icon={<InboxOutlined />} onClick={showCSVModal}>
             Upload CSV
           </Button>
@@ -364,10 +450,11 @@ const ManageStudents = ({ params }: { params: { slug: string } }) => {
         </div>
       </div>
       <div className="border rounded-lg overflow-x-auto overflow-y-auto">
-        {dataFetched ? (
+        {true ? (
           <Table
             columns={columns}
             dataSource={studentData}
+            loading={!dataFetched}
             size="small"
             className="w-full min-w-full max-w-[calc(100%-200px)]"
           />
@@ -442,16 +529,20 @@ const ManageStudents = ({ params }: { params: { slug: string } }) => {
                 </Select>
               </Form.Item>
               <Form.Item
-                label="Phone"
-                name="phone"
+                label="Counsellor's Email"
+                name="counsellorEmail"
                 rules={[
                   {
                     required: false,
-                    message: "Please enter the student phone number!",
+                    message: "Please enter the counsellor's email!",
+                  },
+                  {
+                    type: "email",
+                    message: "Please enter a valid email address!",
                   },
                 ]}
               >
-                <Input placeholder="Enter student phone number" />
+                <Input placeholder="Enter counsellor's email address" />
               </Form.Item>
             </div>
 

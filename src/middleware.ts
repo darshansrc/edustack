@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (session && pathname == "/") {
-    return NextResponse.redirect(new URL("/admin", request.url));
+    return NextResponse.redirect(new URL("/admin/classes", request.url));
   }
 
   if (!session && pathname == "/") {
@@ -19,5 +19,9 @@ export async function middleware(request: NextRequest) {
 
   if (pathname == "/auth/admin" && session) {
     return NextResponse.redirect(new URL("/admin", request.url));
+  }
+
+  if (pathname == "/admin" && session) {
+    return NextResponse.redirect(new URL("/admin/classes", request.url));
   }
 }
