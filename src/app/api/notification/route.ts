@@ -7,8 +7,8 @@ customInitApp();
 
 export async function GET(request: NextRequest) {
   console.log("Hello world!");
-  const notification = new Date().toLocaleString();
-  await setDoc(doc(db, "notifications", notification), {
+  const notification = new Date().toLocaleString().trim();
+  await setDoc(doc(db, "notifications", "niger"), {
     time: notification,
   });
 
