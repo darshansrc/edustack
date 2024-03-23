@@ -12,8 +12,8 @@ export async function POST(request: NextRequest) {
     port: 587,
     secure: false, // Set to true if using SSL/TLS
     auth: {
-      user: "rvitm@edu-stack.com",
-      pass: "102435t0qu5",
+      user: "rvitm@rvei.edu.in",
+      pass: "rsst_rvitm",
     },
   });
 
